@@ -121,6 +121,7 @@ public class AssembleKeyAnnotationHandler extends InternalProviderAssembleAnnota
             .groups(annotation.groups())
             .mappingTemplates(annotation.propTemplates())
             .props(annotation.props())
+            .prop(annotation.prop())
             .propertyMappingStrategy(annotation.propertyMappingStrategy())
             .build();
     }

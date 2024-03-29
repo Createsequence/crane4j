@@ -130,6 +130,7 @@ public class AssembleConstantAnnotationHandler extends InternalProviderAssembleA
             .handlerType(annotation.handlerType())
             .mappingTemplates(annotation.propTemplates())
             .props(annotation.props())
+            .prop(annotation.prop())
             .propertyMappingStrategy(annotation.propertyMappingStrategy())
             .build();
     }

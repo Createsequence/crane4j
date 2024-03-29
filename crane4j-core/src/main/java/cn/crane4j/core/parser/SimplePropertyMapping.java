@@ -47,6 +47,7 @@ public class SimplePropertyMapping implements PropertyMapping {
      *
      * @param propertyMappings property mappings string
      * @return property mappings
+     * @see #of(String, String)
      */
     public static Set<PropertyMapping> from(String propertyMappings) {
         if (StringUtils.isEmpty(propertyMappings)) {
@@ -55,16 +56,27 @@ public class SimplePropertyMapping implements PropertyMapping {
         String[] mappings = propertyMappings.split(PROPERTY_NAME_SEPARATOR);
         Set<PropertyMapping> results= new LinkedHashSet<>(mappings.length);
         for (String mapping : mappings) {
-            mapping = mapping.trim();
-            Asserts.isNotEmpty(mapping, "The property mappings is illegal: {}", propertyMappings);
-            String[] pair = mapping.split(PROPERTY_NAME_MAPPER);
-            Asserts.isFalse(pair.length > 2, "The property mappings is illegal: {}", mapping);
-            PropertyMapping propertyMapping = pair.length < 2 ?
-                new SimplePropertyMapping(pair[0].trim(), pair[0].trim()) :
-                new SimplePropertyMapping(pair[0].trim(), pair[1].trim());
+            PropertyMapping propertyMapping = of(mapping);
             results.add(propertyMapping);
         }
         return results;
+    }
+
+    /**
+     * <p>Resolve the property mapping from string.<br/>
+     * the string format is "source:reference".
+     *
+     * @param mapping property mapping
+     * @return property mapping
+     */
+    public static PropertyMapping of(String mapping) {
+        mapping = mapping.trim();
+        Asserts.isNotEmpty(mapping, "The property mappings is illegal: {}", mapping);
+        String[] pair = mapping.split(PROPERTY_NAME_MAPPER);
+        Asserts.isFalse(pair.length > 2, "The property mappings is illegal: {}", mapping);
+        return pair.length < 2 ?
+            new SimplePropertyMapping(pair[0].trim(), pair[0].trim()) :
+            new SimplePropertyMapping(pair[0].trim(), pair[1].trim());
     }
 
     /**

@@ -101,6 +101,7 @@ public class AssembleAnnotationHandler extends AbstractStandardAssembleAnnotatio
             .handlerType(annotation.handlerType())
             .mappingTemplates(annotation.propTemplates())
             .props(annotation.props())
+            .prop(annotation.prop())
             .propertyMappingStrategy(annotation.propertyMappingStrategy())
             .build();
     }

@@ -191,16 +191,38 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
      */
     protected Set<PropertyMapping> parsePropertyMappings(
         StandardAssembleAnnotation<A> standardAnnotation, String key) {
+        // add mappings from props
         Mapping[] props = standardAnnotation.getProps();
         Set<PropertyMapping> propertyMappings = Stream.of(props)
             .map(m -> ConfigurationUtil.createPropertyMapping(m, key))
             .collect(Collectors.toSet());
+        // add mappings from prop
+        Set<PropertyMapping> propMappings = parsePropToMapping(standardAnnotation, key);
+        if (CollectionUtils.isNotEmpty(propMappings)) {
+            propertyMappings.addAll(propMappings);
+        }
+        // add template mappings
         Class<?>[] propTemplates = standardAnnotation.getMappingTemplates();
         List<PropertyMapping> templateMappings = ConfigurationUtil.parsePropTemplateClasses(propTemplates, annotationFinder);
         if (CollectionUtils.isNotEmpty(templateMappings)) {
             propertyMappings.addAll(templateMappings);
         }
         return propertyMappings;
+    }
+
+    /**
+     * Get property mapping from given {@link StandardAssembleAnnotation#getProp()}.
+     *
+     * @param standardAnnotation standard annotation
+     * @param key key
+     * @return assemble operation groups
+     */
+    protected Set<PropertyMapping> parsePropToMapping(
+        StandardAssembleAnnotation<A> standardAnnotation, String key) {
+        String[] props = standardAnnotation.getProp();
+        return Stream.of(props)
+            .map(SimplePropertyMapping::of)
+            .collect(Collectors.toSet());
     }
 
     /**
@@ -293,6 +315,14 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
         Mapping[] getProps();
 
         /**
+         * Attributes that need to be mapped
+         * between the data source object and the current object.
+         *
+         * @return attributes mappings
+         */
+        String[] getProp();
+
+        /**
          * The name of property mapping strategy.
          *
          * @return strategy name
@@ -339,6 +369,8 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
         private final Class<?>[] mappingTemplates = new Class<?>[0];
         @Builder.Default
         private final Mapping[] props = new Mapping[0];
+        @Builder.Default
+        private final String[] prop = new String[0];
         @Builder.Default
         private final String propertyMappingStrategy = "";
         @Builder.Default

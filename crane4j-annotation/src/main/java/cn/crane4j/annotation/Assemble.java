@@ -191,13 +191,31 @@ public @interface Assemble {
     Class<?> handlerType() default Object.class;
 
     /**
-     * Attributes that need to be mapped
-     * between the data source object and the current object.
+     * <p>Attributes that need to be mapped
+     * between the data source object and the current object.<br/>
+     * It equivalent to {@link #prop()}.
      *
-     * @return attributes
+     * @return attribute mappings
      * @see #propTemplates()
      */
     Mapping[] props() default { };
+
+    /**
+     * <p>Attributes that need to be mapped
+     * between the data source object and the current object.<br/>
+     * It equivalent to {@link #props()}.
+     *
+     * <p>the format is following:
+     * <ul>
+     *     <li>{@code 'a:b'}：equivalent to {@code @Mapping(src = 'a', ref = 'b')}；</li>
+     *     <li>{@code 'a'}：equivalent to {@code @Mapping(src = 'a', ref = 'a')} or {@code @Mapping('a')}；</li>
+     *     <li>{@code ':a'}：equivalent to {@code @Mapping(ref = 'a')}；</li>
+     * </ul>
+     *
+     * @return attribute mappings
+     * @since 2.7.0
+     */
+    String[] prop() default { };
 
     /**
      * <p>Mapping template classes.

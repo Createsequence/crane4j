@@ -121,12 +121,14 @@ public class AssembleMethodAnnotationHandlerTest {
         @AssembleMethod(
             target = "cn.crane4j.core.parser.handler.AssembleMethodAnnotationHandlerTest$Target",
             method = @ContainerMethod(bindMethod = "getItemsByInstantMethod", resultType = Foo.class),
-            props = @Mapping(src = "value3", ref = "value3")
+            //props = @Mapping(src = "value3", ref = "value3")
+            prop = "value3"
         )
         @AssembleMethod(
             targetType = AssembleMethodAnnotationHandlerTest.Target.class,
             method = @ContainerMethod(bindMethod = "getItemsByInstantMethod", resultType = Foo.class),
-            props = @Mapping(src = "value2", ref = "value2")
+            //props = @Mapping(src = "value2", ref = "value2")
+            prop = "value2"
         )
         @AssembleMethod(
             targetType = AssembleMethodAnnotationHandlerTest.Target.class,
@@ -142,7 +144,8 @@ public class AssembleMethodAnnotationHandlerTest {
         @AssembleMethod(
             target = "cn.crane4j.core.parser.handler.AssembleMethodAnnotationHandlerTest",
             method = @ContainerMethod(bindMethod = "getItemsByStaticMethod", resultType = Foo.class),
-            props = @Mapping(ref = "target"),
+            //props = @Mapping(ref = "target"),
+            prop = ":target",
             enableCache = true, cache = @ContainerCache
         )
         private Integer key;
