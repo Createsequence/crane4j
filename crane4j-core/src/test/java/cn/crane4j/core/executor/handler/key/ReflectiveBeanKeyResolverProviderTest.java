@@ -1,8 +1,9 @@
-package cn.crane4j.core.executor.key;
+package cn.crane4j.core.executor.handler.key;
 
-import cn.crane4j.core.exception.Crane4jException;
+import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
 import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.parser.operation.SimpleAssembleOperation;
+import cn.crane4j.core.support.converter.SimpleConverterManager;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,17 +12,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * test for {@link ReflectiveBeanKeyResolverProvider}
+ * test for {@link ReflectiveBeanKeyResolver}
  *
  * @author huangchengxing
+ * @since 2.7.0
  */
 public class ReflectiveBeanKeyResolverProviderTest {
 
-    private ReflectiveBeanKeyResolverProvider provider;
+    private OneToOneAssembleOperationHandler handler;
 
     @Before
     public void init() {
-        this.provider = new ReflectiveBeanKeyResolverProvider(new ReflectivePropertyOperator());
+        this.handler = new OneToOneAssembleOperationHandler(
+            ReflectivePropertyOperator.INSTANCE, SimpleConverterManager.INSTANCE
+        );
     }
 
     @Test
@@ -29,7 +33,7 @@ public class ReflectiveBeanKeyResolverProviderTest {
         AssembleOperation operation = SimpleAssembleOperation.builder()
             .keyType(Source.class)
             .build();
-        Assert.assertThrows(Crane4jException.class, () -> provider.getResolver(operation));
+        Assert.assertNull(handler.determineKeyResolver(operation));
     }
 
     @Test
@@ -38,7 +42,7 @@ public class ReflectiveBeanKeyResolverProviderTest {
             .keyType(Target.class)
             .build();
 
-        KeyResolver keyResolver = provider.getResolver(operation);
+        KeyResolver keyResolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(keyResolver);
         Source source = new Source(1, "test", null, null);
         Object key = keyResolver.resolve(source, operation);
@@ -55,7 +59,7 @@ public class ReflectiveBeanKeyResolverProviderTest {
             .keyDescription("id, name")
             .build();
 
-        KeyResolver keyResolver = provider.getResolver(operation);
+        KeyResolver keyResolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(keyResolver);
         Source source = new Source(1, "test", null, null);
         Object key = keyResolver.resolve(source, operation);
@@ -72,7 +76,7 @@ public class ReflectiveBeanKeyResolverProviderTest {
             .keyDescription("prop1:id, prop2:name")
             .build();
 
-        KeyResolver keyResolver = provider.getResolver(operation);
+        KeyResolver keyResolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(keyResolver);
         Source source = new Source(null, null, 1, "test");
         Object key = keyResolver.resolve(source, operation);

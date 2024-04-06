@@ -56,7 +56,7 @@ public class AssembleAnnotationHandlerTest {
         Assert.assertNotNull(genderOperation);
         Assert.assertEquals("gender", genderOperation.getKey());
         Assert.assertEquals("test", genderOperation.getContainer());
-        Assert.assertNull(genderOperation.getKeyResolver());
+        Assert.assertEquals(genderOperation.getAssembleOperationHandler().determineKeyResolver(genderOperation), genderOperation.getKeyResolver());
         Assert.assertEquals("", genderOperation.getKeyDescription());
         Assert.assertEquals(Integer.class, genderOperation.getKeyType());
         Set<PropertyMapping> propertyMappings = genderOperation.getPropertyMappings();
@@ -70,7 +70,7 @@ public class AssembleAnnotationHandlerTest {
         Assert.assertNotNull(codeOperation);
         Assert.assertEquals("code", codeOperation.getKey());
         Assert.assertEquals("test", codeOperation.getContainer());
-        Assert.assertNull(codeOperation.getKeyResolver());
+        Assert.assertEquals(codeOperation.getAssembleOperationHandler().determineKeyResolver(codeOperation), codeOperation.getKeyResolver());
         Assert.assertEquals("", codeOperation.getKeyDescription());
         Assert.assertEquals(Integer.class, codeOperation.getKeyType());
         propertyMappings = codeOperation.getPropertyMappings();

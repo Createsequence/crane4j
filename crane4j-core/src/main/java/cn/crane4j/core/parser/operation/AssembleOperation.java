@@ -2,7 +2,7 @@ package cn.crane4j.core.parser.operation;
 
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.executor.handler.AssembleOperationHandler;
-import cn.crane4j.core.executor.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.PropertyMapping;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -92,7 +92,6 @@ public interface AssembleOperation extends KeyTriggerOperation {
      * @return key resolver
      * @since 2.7.0
      */
-    @Nullable
     KeyResolver getKeyResolver();
 
     /**

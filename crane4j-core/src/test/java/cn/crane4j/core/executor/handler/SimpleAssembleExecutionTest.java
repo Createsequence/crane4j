@@ -2,6 +2,7 @@ package cn.crane4j.core.executor.handler;
 
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.executor.AssembleExecution;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.BeanOperations;
 import cn.crane4j.core.parser.SimpleBeanOperations;
 import cn.crane4j.core.parser.operation.AssembleOperation;
@@ -9,6 +10,7 @@ import cn.crane4j.core.parser.operation.SimpleAssembleOperation;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -18,7 +20,16 @@ import java.util.Collections;
  */
 public class SimpleAssembleExecutionTest {
 
-    private static final AssembleOperationHandler ASSEMBLE_OPERATION_HANDLER = (c, ts) -> {};
+    private static final AssembleOperationHandler ASSEMBLE_OPERATION_HANDLER = new AssembleOperationHandler() {
+        @Override
+        public KeyResolver determineKeyResolver(AssembleOperation operation) {
+            return null;
+        }
+        @Override
+        public void process(Container<?> container, Collection<AssembleExecution> executions) {
+            // do nothing
+        }
+    };
     private static final BeanOperations BEAN_OPERATIONS = new SimpleBeanOperations(Void.TYPE);
     private static final AssembleOperation ASSEMBLE_OPERATION = SimpleAssembleOperation.builder()
         .key("key")
@@ -26,6 +37,7 @@ public class SimpleAssembleExecutionTest {
         .container(Container.EMPTY_CONTAINER_NAMESPACE)
         .assembleOperationHandler(ASSEMBLE_OPERATION_HANDLER)
         .build();
+
     private static final AssembleExecution EXECUTION = new AssembleExecution.SimpleAssembleExecution(
         BEAN_OPERATIONS, ASSEMBLE_OPERATION, Container.empty(), Collections.emptyList()
     );

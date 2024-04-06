@@ -38,6 +38,7 @@ public class OneToOneAssembleOperationHandlerTest extends BaseExecutorTest {
     public void init() {
         PropertyOperator operator = new ReflectivePropertyOperator(new HutoolConverterManager());
         OneToOneAssembleOperationHandler handler = new OneToOneAssembleOperationHandler(operator, SimpleConverterManager.INSTANCE);
+        handler.setIgnoreNullKey(true);
         configuration.getAssembleOperationHandlerMap().put(handler.getClass().getName(), handler);
         executor = new DisorderedBeanOperationExecutor(configuration);
         Container<Integer> container = LambdaContainer.forLambda(

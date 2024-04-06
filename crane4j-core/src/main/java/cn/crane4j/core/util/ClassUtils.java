@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * <p>{@link Class} utils.
@@ -134,6 +135,30 @@ public class ClassUtils {
         } catch (InstantiationException | IllegalAccessException
                  | InvocationTargetException | NoSuchMethodException e) {
             throw new Crane4jException(e);
+        }
+    }
+
+    /**
+     * <p>Whether the given class is instantiable.
+     *
+     * @param type type
+     * @param fallback fallback when create instance failed, usually used for logging
+     * @return true if instantiable, otherwise false
+     */
+    @SuppressWarnings("java:S3011")
+    public static boolean isInstantiable(Class<?> type, @Nullable Consumer<Throwable> fallback) {
+        try {
+            Constructor<?> constructor = type.getDeclaredConstructor();
+            if (!constructor.isAccessible()) {
+                constructor.setAccessible(true);
+            }
+            constructor.newInstance();
+            return true;
+        } catch (Exception e) {
+            if (Objects.nonNull(fallback)) {
+                fallback.accept(e);
+            }
+            return false;
         }
     }
 

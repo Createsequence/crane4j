@@ -1,22 +1,25 @@
 package cn.crane4j.core.executor.handler;
 
-import cn.crane4j.core.container.Container;
 import cn.crane4j.core.executor.AssembleExecution;
-import cn.crane4j.core.executor.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.IntrospectionKeyResolver;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.ReflectiveBeanKeyResolver;
+import cn.crane4j.core.executor.handler.key.ReflectivePropertyKeyResolver;
 import cn.crane4j.core.parser.PropertyMapping;
+import cn.crane4j.core.parser.SimplePropertyMapping;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
 import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.converter.ConverterManager;
 import cn.crane4j.core.support.reflect.PropDesc;
 import cn.crane4j.core.support.reflect.PropertyOperator;
+import cn.crane4j.core.util.Asserts;
+import cn.crane4j.core.util.ClassUtils;
+import cn.crane4j.core.util.ReflectUtils;
 import cn.crane4j.core.util.StringUtils;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -27,110 +30,96 @@ import java.util.stream.Collectors;
  * for the one-to-one mapping between the target object and the data source object.
  *
  * @author huangchengxing
- * @see PropertyOperator
  */
-@RequiredArgsConstructor
-public class OneToOneAssembleOperationHandler
-    extends AbstractAssembleOperationHandler<AbstractAssembleOperationHandler.Target> {
+public class OneToOneAssembleOperationHandler extends AbstractAssembleOperationHandler {
 
-    /**
-     * propertyOperator
-     */
     protected final PropertyOperator propertyOperator;
+    protected final ConverterManager converterManager;
+    private final KeyResolver keyResolver;
+    private final KeyResolver converterKeyResolver;
 
     /**
-     * converter manager.
-     */
-    private final ConverterManager converterManager;
-
-    /**
-     * whether ignore null key.
-     */
-    @Setter
-    private boolean ignoreNullKey = false;
-
-    /**
-     * Split the {@link AssembleExecution} into pending objects and wrap it as {@link Target}.
+     * Create a new {@link OneToOneAssembleOperationHandler} instance.
      *
-     * @param executions executions
-     * @return {@link Target}
+     * @param propertyOperator propertyOperator
+     * @param converterManager converterManager
+     */
+    public OneToOneAssembleOperationHandler(
+        PropertyOperator propertyOperator, ConverterManager converterManager) {
+        this.propertyOperator = propertyOperator;
+        this.converterManager = converterManager;
+        this.keyResolver = ReflectivePropertyKeyResolver.create(propertyOperator);
+        this.converterKeyResolver = ReflectivePropertyKeyResolver.create(propertyOperator, converterManager);
+    }
+
+    /**
+     * Determine key resolver for the operation.
+     *
+     * @param operation operation
+     * @return key resolver
+     * @see ReflectivePropertyKeyResolver
+     * @see ReflectiveBeanKeyResolver
+     * @see IntrospectionKeyResolver
+     * @since 2.7.0
      */
     @Override
-    protected Collection<Target> collectToEntities(Collection<AssembleExecution> executions) {
-        List<Target> targets = new ArrayList<>();
-        for (AssembleExecution execution : executions) {
-            AssembleOperation operation = execution.getOperation();
-            KeyResolver keyResolver = getKeyResolver(execution);
-            execution.getTargets().stream()
-                .map(t -> createTarget(execution, t, keyResolver.resolve(t, operation)))
-                .filter(t -> !ignoreNullKey || Objects.nonNull(t.getKey()))
-                .forEach(targets::add);
+    public KeyResolver determineKeyResolver(AssembleOperation operation) {
+        KeyResolver specifiedkeyResolver = operation.getKeyResolver();
+        if (Objects.nonNull(specifiedkeyResolver)) {
+            return specifiedkeyResolver;
         }
-        return targets;
-    }
-
-    @NonNull
-    private KeyResolver getKeyResolver(AssembleExecution execution) {
-        KeyResolver keyResolver = execution.getOperation().getKeyResolver();
-        if (Objects.nonNull(keyResolver)) {
-            return keyResolver;
+        Class<?> keyType = operation.getKeyType();
+        boolean specifiedKeyType = Objects.nonNull(keyType) && !ClassUtils.isObjectOrVoid(keyType);
+        // specified key
+        if (StringUtils.isNotEmpty(operation.getKey())) {
+            return specifiedKeyType ? converterKeyResolver : keyResolver;
         }
-        // TODO remove this branch in the future, the KeyResolver will be required.
-        return getDefaultKeyPropertyResolver(execution);
+        // not specified key and key type
+        if (Objects.isNull(keyType)) {
+            return IntrospectionKeyResolver.INSTANCE;
+        }
+        // if key is not specified, and the key type is an instantiable custom class,
+        // its meaning we need make a bean instance as the key.
+        if (isInstantiableCustomClass(keyType)) {
+            String keyDescription = operation.getKeyDescription();
+            Set<PropertyMapping> propertyMappings = StringUtils.isEmpty(keyDescription) ?
+                resolvePropertyMappings(keyType) : resolvePropertyMappings(keyDescription);
+            return new ReflectiveBeanKeyResolver(propertyOperator, propertyMappings.toArray(new PropertyMapping[0]));
+        }
+        return null;
     }
 
-    private KeyResolver getDefaultKeyPropertyResolver(AssembleExecution execution) {
-        String key = execution.getOperation().getKey();
-        // if no key is specified, key value is the targets themselves.
-        KeyResolver keyResolver = StringUtils.isEmpty(key) ?
-            (t, op) -> t : (t, op) -> propertyOperator.readProperty(t.getClass(), t, key);
-        // fix https://github.com/opengoofy/crane4j/issues/153
-        Class<?> keyType = execution.getOperation().getKeyType();
-        return Objects.isNull(keyType) ? keyResolver : (op, t) -> {
-            Object k = keyResolver.resolve(op, t);
-            return converterManager.convert(k, keyType);
-        };
-    }
-
-    /**
-     * Create a {@link Target} instance.
-     *
-     * @param execution execution
-     * @param origin    origin
-     * @param keyValue  key value
-     * @return {@link Target}
-     */
-    protected Target createTarget(AssembleExecution execution, Object origin, Object keyValue) {
-        return new Target(execution, origin, keyValue);
+    private boolean isInstantiableCustomClass(@Nullable Class<?> keyType) {
+        return Objects.nonNull(keyType)
+            && (!ClassUtils.isJdkClass(keyType) || Map.class.isAssignableFrom(keyType))
+            && ClassUtils.isInstantiable(keyType, null);
     }
 
     /**
-     * Obtain the corresponding data source object from the data source container based on the entity's key value.
+     * Resolve the property mappings when no key description is specified.
      *
-     * @param container container
-     * @param targets   targets
-     * @return source objects
+     * @param targetType target type
+     * @return property mappings
      */
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Map<Object, Object> getSourcesFromContainer(Container<?> container, Collection<Target> targets) {
-        Set<Object> keys = targets.stream()
-            .map(Target::getKey)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        return (Map<Object, Object>)((Container<Object>)container).get(keys);
+    private Set<PropertyMapping> resolvePropertyMappings(Class<?> targetType) {
+        return Arrays.stream(ReflectUtils.getFields(targetType))
+            .map(field -> new SimplePropertyMapping(field.getName(), field.getName()))
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
-     * Get the data source object associated with the target object.
+     * Resolve the property mappings when key description is specified.
      *
-     * @param target  target
-     * @param sources sources
-     * @return data source object associated with the target object
+     * @param keyDescription key description
+     * @return property mappings
      */
-    @Override
-    protected Object getTheAssociatedSource(Target target, Map<Object, Object> sources) {
-        return sources.get(target.getKey());
+    private Set<PropertyMapping> resolvePropertyMappings(String keyDescription) {
+        Set<PropertyMapping> mappings = SimplePropertyMapping.from(keyDescription);
+        mappings.forEach(m -> Asserts.isTrue(
+            m.hasSource() && StringUtils.isNotEmpty(m.getReference()),
+            "The property mappings is illegal: {} -> {}", m.getReference(), m.getSource()
+        ));
+        return mappings;
     }
 
     /**
@@ -142,19 +131,22 @@ public class OneToOneAssembleOperationHandler
     @Override
     protected void completeMapping(Object source, Target target) {
         AssembleExecution execution = target.getExecution();
-        PropDesc sourceDesc = propertyOperator.getPropertyDescriptor(source.getClass());
-        PropDesc targetDesc = propertyOperator.getPropertyDescriptor(target.getOrigin().getClass());
+        AssembleOperation operation = execution.getOperation();
+        PropertyMappingStrategy propertyMappingStrategy = operation.getPropertyMappingStrategy();
+        Set<PropertyMapping> mappings = operation.getPropertyMappings();
+        doCompleteMapping(source, target.getOrigin(), mappings, propertyMappingStrategy);
+    }
 
-        // mapping properties
-        PropertyMappingStrategy propertyMappingStrategy = execution.getOperation().getPropertyMappingStrategy();
-        Set<PropertyMapping> mappings = execution.getOperation().getPropertyMappings();
+    private void doCompleteMapping(
+        Object source, Object target, Set<PropertyMapping> mappings, PropertyMappingStrategy propertyMappingStrategy) {
+        PropDesc sourceDesc = propertyOperator.getPropertyDescriptor(source.getClass());
+        PropDesc targetDesc = propertyOperator.getPropertyDescriptor(target.getClass());
         for (PropertyMapping mapping : mappings) {
             Object sourceValue = mapping.hasSource() ?
                 sourceDesc.readProperty(source, mapping.getSource()) : source;
-            Object originTarget = target.getOrigin();
             propertyMappingStrategy.doMapping(
-                originTarget, source, sourceValue, mapping,
-                sv -> targetDesc.writeProperty(originTarget, mapping.getReference(), sourceValue)
+                target, source, sourceValue, mapping,
+                sv -> targetDesc.writeProperty(target, mapping.getReference(), sourceValue)
             );
         }
     }

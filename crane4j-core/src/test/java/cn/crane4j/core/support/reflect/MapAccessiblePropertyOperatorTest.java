@@ -32,6 +32,12 @@ public class MapAccessiblePropertyOperatorTest {
     }
 
     @Test
+    public void testGetPropDesc() {
+        PropDesc propDesc = operator.getPropertyDescriptor(map.getClass());
+        Assert.assertEquals(Map.class, propDesc.getBeanType());
+    }
+
+    @Test
     public void readProperty() {
         Assert.assertEquals("name", operator.readProperty(map.getClass(), map, "name"));
         Assert.assertEquals(1, operator.readProperty(foo.getClass(), foo, "id"));

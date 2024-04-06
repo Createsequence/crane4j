@@ -5,11 +5,12 @@ import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.handler.AssembleOperationHandler;
 import cn.crane4j.core.executor.handler.DisassembleOperationHandler;
-import cn.crane4j.core.executor.key.KeyResolverRegistry;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.BeanOperationParser;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategyManager;
 import cn.crane4j.core.support.converter.ConverterManager;
 import cn.crane4j.core.support.reflect.PropertyOperator;
+import cn.crane4j.core.util.ClassUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -19,7 +20,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author huangchengxing
  */
 public interface Crane4jGlobalConfiguration
-    extends ContainerManager, PropertyMappingStrategyManager, KeyResolverRegistry {
+    extends ContainerManager, PropertyMappingStrategyManager {
 
     /**
      * Get {@link ConverterManager}
@@ -179,4 +180,15 @@ public interface Crane4jGlobalConfiguration
      * @since 2.4.0
      */
     @NonNull CacheManager getCacheManager(String name);
+
+    /**
+     * Get key resolver.
+     *
+     * @param resolverType resolver type
+     * @return key resolver
+     * @since 2.7.0
+     */
+    default KeyResolver getKeyResolver(Class<? extends KeyResolver> resolverType) {
+        return ClassUtils.newInstance(resolverType);
+    }
 }

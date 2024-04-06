@@ -119,7 +119,7 @@ public class StudentVO {
 public class StudentVO {
     @Assemble(
         container = "teacher",
-        handler = "manyToManyAssembleOperationHandler",
+        handlerType = ManyToManyAssembleOperationHandler,
         // [teacher, teacher...] -> [teacher.name, teacher.name...] -> studentVO.teacherNames
         props = @Mapping(src = "name", ref = "teacherNames") 
     )
@@ -135,8 +135,8 @@ public class StudentVO {
 ```java
 public class StudentVO {
     @Assemble(
-        container = "teacher", 
-        handler = "manyToManyAssembleOperationHandler",
+        container = "teacher",
+        handlerType = ManyToManyAssembleOperationHandler,
         props = @Mapping(ref = "teachers")
     )
     private List<Integer> teacherIds; // 也可以直接是集合或者数组
@@ -280,7 +280,7 @@ public class Foo {
 public class StudentVO {
     @Assemble(
         container = "teacher",
-        handler = "manyToManyAssembleOperationHandler",
+        handlerType = ManyToManyAssembleOperationHandler,
         props = @Mapping(src = "name", ref = "teacherNames")
     )
     private String teacherIds;
@@ -333,7 +333,7 @@ configuration.addPropertyMappingStrategy(customStrategy);
 public class StudentVO {
     @Assemble(
         container = "teacher",
-        handler = "manyToManyAssembleOperationHandler",
+        handlerType = ManyToManyAssembleOperationHandler,
         props = @Mapping(src = "name", ref = "teacherNames"),
         propertyMappingStrategy = "CustomMappingStrategy" // 指定策略
     )

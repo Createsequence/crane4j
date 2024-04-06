@@ -9,7 +9,9 @@ import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
 import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.ReflectiveDisassembleOperationHandler;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.TypeHierarchyBeanOperationParser;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.converter.ConverterManager;
 import cn.crane4j.core.util.ReflectUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -17,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
@@ -109,6 +112,22 @@ public class Crane4jApplicationContextTest {
         Assert.assertEquals("test", namespace);
         namespace = context.getNamespaceByBeanName("test");
         Assert.assertNull(namespace);
+    }
+
+    @Test
+    public void getKeyResolver() {
+        KeyResolver keyResolver = context.getKeyResolver(TestKeyResolver.class);
+        Assert.assertNotNull(keyResolver);
+        Assert.assertTrue(keyResolver instanceof TestKeyResolver);
+        ((DefaultListableBeanFactory)applicationContext.getAutowireCapableBeanFactory()).registerSingleton("testKeyResolver", keyResolver);
+        Assert.assertSame(keyResolver, context.getKeyResolver(TestKeyResolver.class));
+    }
+
+    public static class TestKeyResolver implements KeyResolver {
+        @Override
+        public Object resolve(Object target, AssembleOperation operation) {
+            return null;
+        }
     }
 
     protected static class TestConfig {

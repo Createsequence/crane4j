@@ -7,8 +7,10 @@ import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
 import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.ReflectiveDisassembleOperationHandler;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.TypeHierarchyBeanOperationParser;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,20 +80,36 @@ public class SimpleCrane4jGlobalConfigurationTest {
     @Test
     public void getBeanOperationsParser() {
         Assert.assertNotNull(configuration.getBeanOperationsParser(TypeHierarchyBeanOperationParser.class));
+        Assert.assertNotNull(configuration.getBeanOperationsParser(TypeHierarchyBeanOperationParser.class.getSimpleName()));
     }
 
     @Test
     public void getAssembleOperationHandler() {
         Assert.assertNotNull(configuration.getAssembleOperationHandler(ManyToManyAssembleOperationHandler.class));
+        Assert.assertNotNull(configuration.getAssembleOperationHandler(ManyToManyAssembleOperationHandler.class.getSimpleName()));
     }
 
     @Test
     public void getGetBeanOperationExecutor() {
         Assert.assertNotNull(configuration.getBeanOperationExecutor(DisorderedBeanOperationExecutor.class));
+        Assert.assertNotNull(configuration.getBeanOperationExecutor(DisorderedBeanOperationExecutor.class.getSimpleName()));
     }
 
     @Test
     public void getDisassembleOperationHandler() {
         Assert.assertNotNull(configuration.getDisassembleOperationHandler(ReflectiveDisassembleOperationHandler.class));
+        Assert.assertNotNull(configuration.getDisassembleOperationHandler(ReflectiveDisassembleOperationHandler.class.getSimpleName()));
+    }
+
+    @Test
+    public void getKeyResolver() {
+        Assert.assertTrue(configuration.getKeyResolver(TestKeyResolver.class) instanceof TestKeyResolver);
+    }
+
+    public static class TestKeyResolver implements KeyResolver {
+        @Override
+        public Object resolve(Object target, AssembleOperation operation) {
+            return null;
+        }
     }
 }

@@ -1,20 +1,22 @@
 package cn.crane4j.core.executor.handler;
 
 import cn.crane4j.core.container.Container;
-import cn.crane4j.core.executor.AssembleExecution;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.ReflectiveSeparablePropertyKeyResolver;
+import cn.crane4j.core.parser.PropertyMapping;
+import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.converter.ConverterManager;
 import cn.crane4j.core.support.reflect.PropertyOperator;
+import cn.crane4j.core.util.Asserts;
+import cn.crane4j.core.util.CollectionUtils;
+import cn.crane4j.core.util.StringUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -28,57 +30,14 @@ import java.util.stream.Collectors;
  * one value can be obtained through a key, but there are multiple keys at the same time.
  *
  * @author huangchengxing
- * @see DefaultSplitter
+ * @see ReflectiveSeparablePropertyKeyResolver
  */
-@Setter
-public class ManyToManyAssembleOperationHandler extends OneToManyAssembleOperationHandler {
+@RequiredArgsConstructor
+public class ManyToManyAssembleOperationHandler extends AbstractAssembleOperationHandler {
 
-    /**
-     * splitter used to split the value of key attribute into multiple key values.
-     *
-     * @see ManyToManyAssembleOperationHandler.DefaultSplitter
-     */
-    @NonNull
-    private KeySplitter keySplitter;
-
-    /**
-     * Create an {@link ManyToManyAssembleOperationHandler} instance.
-     *
-     * @param propertyOperator propertyOperator
-     * @param converterManager converter manager
-     * @param keySplitter splitter used to split the value of key attribute into multiple key values.
-     */
-    public ManyToManyAssembleOperationHandler(
-        PropertyOperator propertyOperator, ConverterManager converterManager,
-        @NonNull KeySplitter keySplitter) {
-        super(propertyOperator, converterManager);
-        this.keySplitter = keySplitter;
-    }
-
-    /**
-     * Create a {@link ManyToManyAssembleOperationHandler} instance
-     * and use the default {@link DefaultSplitter} split key value
-     *
-     * @param propertyOperator property operator
-     * @param converterManager converter manager
-     */
-    public ManyToManyAssembleOperationHandler(PropertyOperator propertyOperator, ConverterManager converterManager) {
-        this(propertyOperator, converterManager, new DefaultSplitter(","));
-    }
-
-    /**
-     * Create a {@link Target} instance.
-     *
-     * @param execution execution
-     * @param origin    origin
-     * @param keyValue  key value
-     * @return {@link Target}
-     */
-    @Override
-    protected Target createTarget(AssembleExecution execution, Object origin, Object keyValue) {
-        // TODO remove this override method in the future, the KeyResolver already split the key value
-        return new Target(execution, origin, keySplitter.apply(keyValue));
-    }
+    private static final String DEFAULT_KEY_SEPARATOR = ",";
+    protected final PropertyOperator propertyOperator;
+    protected final ConverterManager converterManager;
 
     /**
      * Obtain the corresponding data source object from the data source container based on the entity's key value.
@@ -114,39 +73,48 @@ public class ManyToManyAssembleOperationHandler extends OneToManyAssembleOperati
     }
 
     /**
-     * Split the value of key attribute into multiple key values.
+     * Complete attribute mapping between the target object and the data source object.
      *
-     * @since 2.5.0
+     * @param source source
+     * @param target target
      */
-    public interface KeySplitter extends Function<Object, Collection<Object>> {
+    @Override
+    protected void completeMapping(Object source, Target target) {
+        AssembleOperation operation = target.getExecution().getOperation();
+        PropertyMappingStrategy propertyMappingStrategy = operation.getPropertyMappingStrategy();
+        Collection<?> sources = CollectionUtils.adaptObjectToCollection(source);
+        Set<PropertyMapping> mappings = operation.getPropertyMappings();
+        for (PropertyMapping mapping : mappings) {
+            // there are always multiple source values,
+            // so we need to merge the source objects after operation
+            Collection<?> sourceValues = !mapping.hasSource() ? sources : sources.stream()
+                .map(s -> propertyOperator.readProperty(s.getClass(), s, mapping.getSource()))
+                .collect(Collectors.toList());
+            Object origin = target.getOrigin();
+            propertyMappingStrategy.doMapping(
+                origin, source, sourceValues, mapping,
+                sv -> propertyOperator.writeProperty(origin.getClass(), origin, mapping.getReference(), sourceValues)
+            );
+        }
     }
 
     /**
-     * The default key value splitter supports splitting {@link Collection},
-     * arrays and strings with specified delimiters.
+     * Determine key resolver for the operation.
+     *
+     * @param operation operation
+     * @return key resolver
+     * @since 2.7.0
      */
-    @RequiredArgsConstructor
-    public static class DefaultSplitter implements KeySplitter {
-        private final String strSeparator;
-        @SuppressWarnings("unchecked")
-        @Override
-        public Collection<Object> apply(Object keys) {
-            if (Objects.isNull(keys)) {
-                return Collections.emptyList();
-            }
-            if (keys instanceof String) {
-                String str = (String)keys;
-                return Arrays.stream(str.split(strSeparator))
-                    .map(String::trim)
-                    .collect(Collectors.toSet());
-            }
-            if (keys instanceof Collection) {
-                return (Collection<Object>)keys;
-            }
-            if (keys.getClass().isArray()) {
-                return Arrays.asList((Object[])keys);
-            }
-            return Collections.emptyList();
+    @Override
+    public KeyResolver determineKeyResolver(AssembleOperation operation) {
+        KeyResolver specifiedkeyResolver = operation.getKeyResolver();
+        if (Objects.nonNull(specifiedkeyResolver)) {
+            return specifiedkeyResolver;
         }
+        Asserts.isNotEmpty(operation.getKey(), "The key must be specified for the operation config on [{}]", operation.getSource());
+        String separator = StringUtils.emptyToDefault(operation.getKeyDescription(), DEFAULT_KEY_SEPARATOR);
+        return new ReflectiveSeparablePropertyKeyResolver(
+            propertyOperator, converterManager, separator
+        );
     }
 }

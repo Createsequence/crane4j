@@ -154,56 +154,17 @@ public class Foo {
 
 ## 3.键的解析策略
 
-在 2.7.0 及以上版本，你可以通过指定 `keyResolver` 来调整键值的解析策略，此时 crane4j 将不遵循操作处理器 `AssembleOperationHandler` 的逻辑，而依照你指定的逻辑从目标对象中提取 Key 值。
+在 2.7.0 及以上版本，你可以通过指定 `keyResolver`  ，或者基于操作处理器 `AssembleOperationHandler` 通过  `keyDesc` 中配置一些附加信息来调整键值的解析策略。
 
-此后，调用数据源容器的时候，将会输入由上述提取到的 Key 值组成的集合用于获取对应数据源。
+关于后一种场景，可以直接参见 [装配操作处理器](./assemble_operation_handler.md) 一节。
 
-### 3.1.解析属性值
+### 3.1.将属性值合成为参数对象
 
-~~~java
-@Data
-public class Foo {
-  
-  @Assemble(
-    container = "foo",
-  	keyResolver = "reflectiveBeanKeyResolverProvider", // 指定使用属性键值解析器
-    props = @Mapping("name")
-  )
-  private Integer id;
-  private String name;
-}
-~~~
-
-该解析器将从 `key` 指向的属性上提取属性值作为键值。
-
-### 3.2.解析批量属性值
-
-```java
-@Data
-public class Foo {
-  
-  @Assemble(
-    container = "foo",
-  	keyResolver = "reflectiveSeparablePropertyKeyResolverProvider", // 指定使用属性键值解析器
-    keyDesc = ",", // 指定使用 “，” 作为分隔符
-    keyType = Integer.class, // 指定将分割出的每个 key 都转为 Integer 类型
-    props = @Mapping("name")
-  )
-  private String ids;
-  private String name;
-}
-```
-
-该解析器将从 `key` 指向的属性上提取属性值作为键值，如果是字符串，则允许根据你在 `keyDesc` 属性上指定的分隔符将字符串分割为集合。
-
-此外，如果你指定了 `keyType`，则 crane4j 将会额外的把集合中的每个属性都进行类型转换。如果你的属性值是集合、数组，则会与分割后的字符串一样，针对每个元素进行类型转换。
-
-### 3.3.将属性值合成为参数对象
+当你使用一对一或一对多装配处理器时，你可以通过 keyDesc 配置属性映射，以便动态生成一个参数对象作为 key 值：
 
 ~~~java
 @Assemble(
     container = "foo",
-  	keyResolver = "reflectivePropertyKeyResolverProvider", // 指定使用属性键值解析器
     keyType = FooQueryDTO.class, // 指定参数对象类型，该类必须有一个公开的无参构造方法
     keyDesc = "id:prop1, name:prop2", // 指定如何将属性值映射到参数对象
     props = @Mapping("name")
@@ -214,6 +175,7 @@ public class Foo {
   private String name;
 }
 
+// 参数对象
 @Data
 public class FooQueryDTO {
   private String prop1;
@@ -221,13 +183,92 @@ public class FooQueryDTO {
 }
 ~~~
 
-当使用该解析器时，你且需要将操作声明在方法上，并且不指定 Key 值。然后，将 `keyType` 设置为你要生成的参数对象类型，接着在 `keyDesc` 中指定如何进行属性映射。当执行时， crane4j 将根据你的配置，尝试通过无参构造器创建一个参数对象，随后将目标对象的属性映射到参数对象中，然后将参数对象作为本次调用的 Key 值。
+-   将注解配置在类而非属性或方法上；
+-   不指定该操作绑定的 key 字段，并将 `keyType` 设置为你要生成的参数对象类型
+-   接着在 `keyDesc` 中指定如何进行属性映射，其中：
+    -   `keyDesc` 的格式为 “源属性名1:目标属性名1, 源属性名2:目标属性名2……”；
+    -   如果你的源属性名与目标属性名一致，则也可以写为“属性名1, 属性名2……”；
+    -   当如果你不填写 `keyDesc` ，那 crane4j 将尝试对所有的同名字段进行拷贝；
 
-其中：
+此后，当执行时， crane4j 将根据你的配置，尝试通过无参构造器创建一个参数对象，随后将目标对象的属性映射到参数对象中，最后再将参数对象作为本次调用的 Key 值。
 
--   `keyDesc` 的格式为 “源属性名1:目标属性名1, 源属性名2:目标属性名2……”；
--   如果你的源属性名与目标属性名一致，则也可以写为“属性名1, 属性名2……”；
--   当如果你不填写 `keyDesc` ，那 crane4j 将尝试对所有的同名字段进行拷贝；
+:::tip
+
+该功能基于 `ReflectiveBeanKeyResolver` 实现，不过默认的一对一与一对多装配处理器默认内置了该解析，因此你只需要通过 `keyDesc` 进行配置即可。
+
+该功能通常配合方法容器使用，具体内容可参见 [方法容器](./container/method_container.md) 一节。
+
+:::
+
+### 3.2.将字符串按分隔符拆分
+
+当你使用多对多参数处理器 `ManyToManyAssembleHandler` 进行多对多批量装配时，你可以在 `keyDesc` 属性值中指定分隔符：
+
+```java
+@Data
+public class Foo {
+  
+  @Assemble(
+    container = "foo",
+    handlerType = ManyToManyAssembleHandler.class, // 使用多对多参数处理器
+    keyDesc = ",", // 指定使用 “，” 作为分隔符
+    keyType = Integer.class, // 指定将分割出的每个 key 都转为 Integer 类型
+    props = @Mapping("name")
+  )
+  private String ids;
+  private String name;
+}
+```
+
+在默认情况下，总是使用 “`,`” 符号作为分隔符。
+
+:::tip
+
+该功能基于 `ReflectiveSeparablePropertyKeyResolver` 实现，不过默认的多对多装配处理器默认内置了该解析，因此你只需要通过 `keyDesc` 进行配置即可。
+
+:::
+
+### 3.3.为键值指定别名
+
+在一些情况下，我们可能需要依次获取对象的某几个属性值，并将首个非空值作为实际的 key 值，类似下述代码：
+
+~~~java
+Bean bean = new Bean();
+Integer id = bean.getId(); // 默认取 id 属性值
+if (Objects.isNull(id)) { // 若 id 属性为空，则取 userId 属性
+  	id = bean.getUserId();
+}
+if (Objects.isNull(id)) { // 若 userId 属性为空，则取 key 属性
+  	id = bean.getKey();
+}
+return id;
+~~~
+
+我们可以通过指定键值解析器为 `ReflectiveAliasPropertyKeyResolver` 来实现类似的效果：
+
+~~~java
+@Data
+public class Foo {
+    @Assemble(
+        container = "user",
+        props = @Mapping("name"),
+        keyResolver = ReflectiveAliasPropertyKeyResolver.class, // 指定键值解析器
+        keyDesc = "id, userId, userKey" // 指定关联三个属性
+    )
+    private String id;
+    private String userId;
+    private String userKey;
+    private String name;
+}
+~~~
+
+### 3.4.自定义解析器
+
+如果默认的解析器不符合你的要求，你也可以实现 `KeyResolver` 接口，并指定使用你自己的解析器。
+
+在 Spring 环境下，你可以直接将其交给 Spring 管理，crane4j 将会优先从 Spring 容器中获取。此外，你也可以提供一个无参构造方法，在无法直接从 Spring 容器获取的情况下，crane4j 将会通过反射创建一个实例。
+
+此外，如果你的 `KeyResolver` 在执行的过程中涉及到大量的逻辑判断，那么我们推荐参考 `ReflectiveAliasPropertyKeyResolver` 将其设置为多例 Bean，并且通过缓存等机制避免运行时的额外判断逻辑。
 
 ## 4.属性映射策略
 

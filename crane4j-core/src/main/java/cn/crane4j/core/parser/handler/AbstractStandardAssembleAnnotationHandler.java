@@ -5,7 +5,7 @@ import cn.crane4j.annotation.MappingTemplate;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.executor.handler.AssembleOperationHandler;
-import cn.crane4j.core.executor.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.BeanOperationParser;
 import cn.crane4j.core.parser.BeanOperations;
 import cn.crane4j.core.parser.PropertyMapping;
@@ -18,6 +18,7 @@ import cn.crane4j.core.parser.operation.KeyTriggerOperation;
 import cn.crane4j.core.parser.operation.SimpleAssembleOperation;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
+import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.ClassUtils;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.ConfigurationUtil;
@@ -36,7 +37,6 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -135,12 +135,45 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
             .build();
 
         // determine key resolver
-        Optional.ofNullable(standardAssembleAnnotation.getKeyResolver())
-            .filter(StringUtils::isNotEmpty)
-            .map(globalConfiguration::getKeyResolver)
-            .map(p -> p.getResolver(operation))
-            .ifPresent(operation::setKeyResolver);
+        KeyResolver keyResolver = determineKeyResolver(
+            standardAssembleAnnotation, assembleOperationHandler, operation);
+        operation.setKeyResolver(keyResolver);
         return operation;
+    }
+
+    /**
+     * Determine key resolver.
+     *
+     * @param standardAssembleAnnotation standard annotation
+     * @param operationHandler operation handler
+     * @param operation assemble operation
+     * @return key resolver
+     */
+    @SuppressWarnings("unchecked")
+    protected KeyResolver determineKeyResolver(
+        StandardAssembleAnnotation<A> standardAssembleAnnotation,
+        AssembleOperationHandler operationHandler, AssembleOperation operation) {
+        Class<?> keyResolverType = standardAssembleAnnotation.getKeyResolver();
+        KeyResolver keyResolver;
+        if (Objects.isNull(keyResolverType) || ClassUtils.isObjectOrVoid(keyResolverType)) {
+            keyResolver = operationHandler.determineKeyResolver(operation);
+        }
+        else {
+            Asserts.isTrue(
+                KeyResolver.class.isAssignableFrom(keyResolverType),
+                "key resolver must be a subclass of KeyResolver: [{}]", keyResolverType
+            );
+            keyResolver = globalConfiguration.getKeyResolver((Class<? extends KeyResolver>)keyResolverType);
+        }
+        Asserts.isNotNull(
+            keyResolver, "cannot determine key resolver for annotation [{}] on [{}]",
+            standardAssembleAnnotation.getAnnotation().getClass().getSimpleName(),
+            standardAssembleAnnotation.getAnnotatedElement()
+        );
+        if (keyResolver instanceof KeyResolver.OperationAware) {
+            ((KeyResolver.OperationAware)keyResolver).setAssembleOperation(operation);
+        }
+        return keyResolver;
     }
 
     /**
@@ -336,7 +369,7 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
          * @since 2.7.0
          */
         @Nullable
-        String getKeyResolver();
+        Class<?> getKeyResolver();
 
         /**
          * Some description of the key which
@@ -375,7 +408,7 @@ public abstract class AbstractStandardAssembleAnnotationHandler<A extends Annota
         private final String propertyMappingStrategy = "";
         @Builder.Default
         @Nullable
-        private final String keyResolver = null;
+        private final Class<?> keyResolver = null;
         @Builder.Default
         @Nullable
         private final String keyDesc = null;

@@ -1,7 +1,7 @@
 package cn.crane4j.core.parser.operation;
 
 import cn.crane4j.core.executor.handler.AssembleOperationHandler;
-import cn.crane4j.core.executor.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.PropertyMapping;
 import cn.crane4j.core.parser.handler.strategy.OverwriteNotNullMappingStrategy;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;

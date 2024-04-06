@@ -2,6 +2,8 @@ package cn.crane4j.core.executor.handler;
 
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.executor.AssembleExecution;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.NamedComponent;
 
 import java.util.Collection;
@@ -24,6 +26,15 @@ import java.util.Collection;
  * @see ManyToManyAssembleOperationHandler
  */
 public interface AssembleOperationHandler extends NamedComponent {
+
+    /**
+     * Determine key resolver for the operation.
+     *
+     * @param operation operation
+     * @return key resolver
+     * @since 2.7.0
+     */
+    KeyResolver determineKeyResolver(AssembleOperation operation);
 
     /**
      * Perform assembly operation.

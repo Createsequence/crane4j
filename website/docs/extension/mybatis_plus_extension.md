@@ -211,7 +211,7 @@ public class DeptEmpVO {
     @AssembleMp(
         mapper = "empMapper", where = "deptId", // 根据部门 id 查询员工集合
         mappingType = MappingType.ONE_TO_MANY, // 按部门 id 进行一对多映射
-        handler = "oneToManyAssembleOperationHandler", // 一对多映射处理器
+        handlerType = OneToManyAssembleOperationHandler.class, // 一对多映射处理器
         props = @Mapping(src = "name", ref = "deptNames") // 将指定部门下所有的员工名称映射到 empNames 集合
     )
     private Integer deptId;

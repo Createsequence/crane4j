@@ -1,5 +1,7 @@
 package cn.crane4j.core.executor.handler;
 
+import cn.crane4j.core.executor.handler.key.ReflectiveBeanKeyResolver;
+import cn.crane4j.core.executor.handler.key.ReflectiveSeparablePropertyKeyResolver;
 import cn.crane4j.core.parser.PropertyMapping;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
 import cn.crane4j.core.support.converter.ConverterManager;
@@ -21,16 +23,19 @@ import java.util.stream.Collectors;
  * one value can be obtained through a key, but there are multiple keys at the same time.
  *
  * @author huangchengxing
+ * @see ReflectiveBeanKeyResolver
+ * @see ReflectiveSeparablePropertyKeyResolver
  */
 public class OneToManyAssembleOperationHandler extends OneToOneAssembleOperationHandler {
 
     /**
-     * Create an {@link OneToManyAssembleOperationHandler} instance.
+     * Create a new {@link OneToOneAssembleOperationHandler} instance.
      *
-     * @param propertyOperator property operator
-     * @param converterManager converter manager
+     * @param propertyOperator propertyOperator
+     * @param converterManager converterManager
      */
-    public OneToManyAssembleOperationHandler(PropertyOperator propertyOperator, ConverterManager converterManager) {
+    public OneToManyAssembleOperationHandler(
+        PropertyOperator propertyOperator, ConverterManager converterManager) {
         super(propertyOperator, converterManager);
     }
 

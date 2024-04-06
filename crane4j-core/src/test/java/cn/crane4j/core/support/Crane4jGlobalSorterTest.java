@@ -31,6 +31,7 @@ public class Crane4jGlobalSorterTest {
         Assert.assertEquals(0, sorter.compare(sortedBean, sortedBean));
         Assert.assertEquals(-1, sorter.compare(sortedBean, orderedBean));
         Assert.assertEquals(1, sorter.compare(orderedBean, sortedBean));
+        Assert.assertEquals(0, sortedBean.compareTo(sortedBean));
     }
 
     @Getter

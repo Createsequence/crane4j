@@ -20,12 +20,6 @@ import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.ReflectiveDisassembleOperationHandler;
-import cn.crane4j.core.executor.key.DefaultKeyResolverProviderRegistry;
-import cn.crane4j.core.executor.key.KeyResolver;
-import cn.crane4j.core.executor.key.KeyResolverRegistry;
-import cn.crane4j.core.executor.key.ReflectiveBeanKeyResolverProvider;
-import cn.crane4j.core.executor.key.ReflectivePropertyKeyResolverProvider;
-import cn.crane4j.core.executor.key.ReflectiveSeparablePropertyKeyResolverProvider;
 import cn.crane4j.core.parser.BeanOperationParser;
 import cn.crane4j.core.parser.ConditionalTypeHierarchyBeanOperationParser;
 import cn.crane4j.core.parser.TypeHierarchyBeanOperationParser;
@@ -86,8 +80,6 @@ public class SimpleCrane4jGlobalConfiguration
     private final Map<String, CacheManager> cacheManagerMap = new HashMap<>(4);
     @Delegate
     private final PropertyMappingStrategyManager propertyMappingStrategyManager = new SimplePropertyMappingStrategyManager();
-    @Delegate
-    private final KeyResolverRegistry keyResolverRegistry = new DefaultKeyResolverProviderRegistry();
 
     /**
      * Create a {@link SimpleCrane4jGlobalConfiguration} using the default configuration.
@@ -189,15 +181,6 @@ public class SimpleCrane4jGlobalConfiguration
         configuration.addPropertyMappingStrategy(OverwriteMappingStrategy.INSTANCE);
         configuration.addPropertyMappingStrategy(OverwriteNotNullMappingStrategy.INSTANCE);
         configuration.addPropertyMappingStrategy(new ReferenceMappingStrategy(operator));
-
-        // key resolver
-        ReflectivePropertyKeyResolverProvider reflectivePropertyKeyResolverProvider = new ReflectivePropertyKeyResolverProvider(operator, converter);
-        configuration.registerKeyResolverProvider(KeyResolver.class.getSimpleName(), reflectivePropertyKeyResolverProvider);
-        configuration.registerKeyResolverProvider(reflectivePropertyKeyResolverProvider.getName(), reflectivePropertyKeyResolverProvider);
-        ReflectiveSeparablePropertyKeyResolverProvider reflectiveSeparablePropertyKeyResolverProvider = new ReflectiveSeparablePropertyKeyResolverProvider(operator, converter);
-        configuration.registerKeyResolverProvider(reflectiveSeparablePropertyKeyResolverProvider.getName(), reflectiveSeparablePropertyKeyResolverProvider);
-        ReflectiveBeanKeyResolverProvider reflectiveBeanKeyResolverProvider = new ReflectiveBeanKeyResolverProvider(operator);
-        configuration.registerKeyResolverProvider(reflectiveBeanKeyResolverProvider.getName(), reflectiveBeanKeyResolverProvider);
 
         // operation handlers
         OneToOneAssembleOperationHandler oneToOneReflexAssembleOperationHandler = new OneToOneAssembleOperationHandler(operator, converter);

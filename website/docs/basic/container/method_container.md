@@ -129,12 +129,11 @@ public List<Integer> listUserAgeNameByIds(List<Integer> ids);
 
 ## 4.接受参数对象
 
-有时候，我们要声明为数据源容器的方法会将对象作为查询参数，在 2.7.0，你可以配合键值解析器 `KeyResolver` 来实现这样的效果：
+有时候，我们要声明为数据源容器的方法会将对象作为查询参数，在 2.7.0 及以上版本，你可以通过下述方式来配置如何生成参数对象：
 
 ~~~java
 @Assemble(
     container = "dict", props = @Mapping(src = "name", ref = "dictName"),
-    keyResolver = "reflectivePropertyKeyResolverProvider", // 指定使用属性键值解析器
     keyType = DictItemQueryDTO.class, // 指定参数对象类型，该类必须有一个公开的无参构造方法
     keyDesc = "dictId:id, dictType:type", // 指定如何将属性值映射到参数对象
 )
@@ -145,20 +144,20 @@ public class Foo {
     private String dictName;
 }
 
-// 查询方法
-@ContainerMethod(
-    namespace = "onoToOneMethod", resultType = DictItemQueryVO.class,
-  	type = MappingType.ORDER_OF_KEYS
-)
-public List<DictItemQueryDTO> listItemByIdsAndTypes(List<DictItemQueryDTO> args) {
-    // do something
-}
-
-// 参数对象
+// 对应的参数对象
 @Data
 public class CustomerQueryDTO {
   private String id;
   private String type;
+}
+
+// 对应的接受参数对象的查询方法
+@ContainerMethod(
+    namespace = "onoToOneMethod", resultType = DictItemQueryVO.class,
+  	type = MappingType.ORDER_OF_KEYS
+)
+public List<DictItemQueryDTO> listItemByIdsAndTypes(List<DictItemQueryDTO> dtos) {
+    // do something
 }
 ~~~
 

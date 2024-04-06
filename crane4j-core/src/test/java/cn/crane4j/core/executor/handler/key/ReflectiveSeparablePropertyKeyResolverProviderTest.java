@@ -1,5 +1,6 @@
-package cn.crane4j.core.executor.key;
+package cn.crane4j.core.executor.handler.key;
 
+import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.parser.operation.SimpleAssembleOperation;
 import cn.crane4j.core.support.converter.SimpleConverterManager;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
@@ -15,17 +16,18 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * test for {@link ReflectiveSeparablePropertyKeyResolverProvider}
+ * test for {@link ReflectiveSeparablePropertyKeyResolver}
  *
  * @author huangchengxing
+ * @since 2.7.0
  */
 public class ReflectiveSeparablePropertyKeyResolverProviderTest {
 
-    private ReflectiveSeparablePropertyKeyResolverProvider provider;
+    private ManyToManyAssembleOperationHandler handler;
 
     @Before
     public void init() {
-        this.provider = new ReflectiveSeparablePropertyKeyResolverProvider(
+        this.handler = new ManyToManyAssembleOperationHandler(
             ReflectivePropertyOperator.INSTANCE, SimpleConverterManager.INSTANCE
         );
     }
@@ -44,7 +46,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idArray")
             .keyDescription(", ")
             .build();
-        KeyResolver resolver = provider.getResolver(operation);
+        KeyResolver resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         Object key = resolver.resolve(source, operation);
         Assert.assertEquals(Arrays.asList(array), key);
@@ -55,7 +57,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .keyType(String.class)
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertTrue(key instanceof Collection);
@@ -66,7 +68,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idStr")
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertEquals(Arrays.asList("7", "8", "9"), key);
@@ -76,7 +78,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idStr")
             .keyType(String.class)
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         source.setIdStr(singleStr);
         key = resolver.resolve(source, operation);
@@ -88,7 +90,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .keyType(String.class)
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertEquals(Collections.singletonList(target), key);
@@ -103,7 +105,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idArray")
             .keyDescription(", ")
             .build();
-        KeyResolver resolver = provider.getResolver(operation);
+        KeyResolver resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         Object key = resolver.resolve(source, operation);
         Assert.assertTrue(key instanceof Collection);
@@ -114,7 +116,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idColl")
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertTrue(key instanceof Collection);
@@ -125,7 +127,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idStr")
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertTrue(key instanceof Collection);
@@ -136,7 +138,7 @@ public class ReflectiveSeparablePropertyKeyResolverProviderTest {
             .key("idTarget")
             .keyDescription(", ")
             .build();
-        resolver = provider.getResolver(operation);
+        resolver = handler.determineKeyResolver(operation);
         Assert.assertNotNull(resolver);
         key = resolver.resolve(source, operation);
         Assert.assertTrue(key instanceof Collection);

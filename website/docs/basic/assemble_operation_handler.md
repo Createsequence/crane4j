@@ -49,7 +49,7 @@ Container<String> customerContainer = LambdaContainer.forLambda(
 public class CustomerVO {
     @Assemble(
         container = "customer",
-        handler = "oneToManyAssembleOperationHandler",
+        handlerType = OneToManyAssembleOperationHandler.class,
         props = @Mapping(src = "name", ref = "customerNames")
     )
     private Integer id;
@@ -61,15 +61,13 @@ public class CustomerVO {
 
 ### 2.2.使用参数对象作为 Key 值
 
-在一对多的情况下，数据源容器（通常是接口中的查询方法）接受的参数有可能是一个参数对象，若在 2.7.0 及更高版本，你可以通过指定 key 解析器来指定如何生成参数对象：
+在一对多的情况下，数据源容器（通常是接口中的查询方法）接受的参数有可能是一个参数对象，若在 2.7.0 及更高版本，你可以通过下述方式来指定如何生成参数对象：
 
 ~~~java
 @Assemble(
-    container = "customer",
-    handler = "oneToManyAssembleOperationHandler",
+    container = "customer", 
+    handlerType = OneToManyAssembleOperationHandler.class,
     props = @Mapping(src = "name", ref = "customerNames"),
-  
-    keyResolver = "reflectivePropertyKeyResolverProvider", // 指定使用属性键值解析器
     keyType = CustomerQueryDTO.class, // 指定参数对象类型，该类必须有一个公开的无参构造方法
     keyDesc = "id:prop1, type:prop2", // 指定如何将属性值映射到参数对象
 )
@@ -115,7 +113,7 @@ private Integer[] idArray; // 键字段为数组，例如：[a, b, c]
 public class StudentVO {
     @Assemble(
         container = "teacher", 
-        handler = "manyToManyAssembleOperationHandler",
+        handlerType = ManyToManyAssembleOperationHandler,
         props = @Mapping(src = "name", ref = "teacherNames")
     )
     private String teacherIds; // 默认支持 "1, 2, 3" 格式
@@ -132,7 +130,7 @@ public class StudentVO {
     @Assemble(
         container = "teacher", 
         props = @Mapping(ref = "teachers"),
-        handlerName = "manyToManyAssembleOperationHandler"
+        handlerType = ManyToManyAssembleOperationHandler
     )
     private String teacherIds; // 默认支持 "1, 2, 3" 格式
     private List<Teacher> teachers;
@@ -143,17 +141,7 @@ public class StudentVO {
 
 ### 3.2.更换分隔符
 
-默认情况下，若返回值为字符串，`ManyToManyAssembleOperationHandler` 总是尝试将其根据`,`分割为字符串集合，但如果有必要，用户也可以通过 `ManyToManyAssembleOperationHandler.setKeySplitter` 方法设置自己需要的分隔符。
-
-例如，如果希望使用`|`符号作为分隔符，则可以执行以下操作：
-
-~~~java
-ManyToManyAssembleOperationHandler handler = SpringUtil.getBean(ManyToManyAssembleOperationHandler.class);
-// 按 | 分割
-handler.setKeySplitter(k -> new ManyToManyAssembleOperationHandler.DefaultSplitter("|"));
-~~~
-
-在 2.7.0 及更高版本，你也可以通过指定 key 解析器来更换分隔符：
+默认情况下，若返回值为字符串，`ManyToManyAssembleOperationHandler` 总是尝试将其根据 “`,`” 符号分割为字符串集合，但如果有必要，你也可以通过 `keyDesc` 属性指定要使用的分隔符。
 
 ~~~java
 @Data
@@ -161,7 +149,6 @@ public class Foo {
   
     @Assemble(
         container = "foo",
-        keyResolver = "reflectiveSeparablePropertyKeyResolverProvider", // 指定使用属性键值解析器
         keyDesc = "|", // 指定使用 “|” 作为分隔符
         keyType = Integer.class, // 指定将分割出的每个 key 都转为 Integer 类型
         props = @Mapping("name")
@@ -170,7 +157,5 @@ public class Foo {
     private List<Teacher> teachers;
 }
 ~~~
-
-当同时配置了分割符时，Crane4j 将会优先遵循 Key 解析器的配置。
 
 具体可参见 [声明装配操作](./declare_assemble_operation.md) 中 “键的解析策略” 一节。

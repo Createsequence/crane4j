@@ -47,7 +47,7 @@ public class SimplePropertyMapping implements PropertyMapping {
      *
      * @param propertyMappings property mappings string
      * @return property mappings
-     * @see #of(String, String)
+     * @see #of
      */
     public static Set<PropertyMapping> from(String propertyMappings) {
         if (StringUtils.isEmpty(propertyMappings)) {

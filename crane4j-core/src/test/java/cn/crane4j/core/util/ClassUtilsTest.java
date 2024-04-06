@@ -1,6 +1,7 @@
 package cn.crane4j.core.util;
 
 import cn.crane4j.core.exception.Crane4jException;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Assert;
@@ -74,6 +75,14 @@ public class ClassUtilsTest {
     }
 
     @Test
+    public void isInstantiable() {
+        Assert.assertFalse(
+            ClassUtils.isInstantiable(Foo.class, Assert::assertNotNull)
+        );
+        Assert.assertTrue(ClassUtils.isInstantiable(Foo2.class, null));
+    }
+
+    @Test
     public void packageToPath() {
         Assert.assertEquals("cn/crane4j/core/util/ClassUtils", ClassUtils.packageToPath("cn.crane4j.core.util.ClassUtils"));
         Assert.assertThrows(NullPointerException.class, () -> ClassUtils.packageToPath(null));
@@ -83,5 +92,10 @@ public class ClassUtilsTest {
     @RequiredArgsConstructor
     private static class Foo {
         private final String name;
+    }
+
+    @SuppressWarnings("unused")
+    @NoArgsConstructor
+    private static class Foo2 {
     }
 }

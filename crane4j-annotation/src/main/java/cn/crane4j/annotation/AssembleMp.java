@@ -114,7 +114,7 @@ public @interface AssembleMp {
      * @return namespace
      * @since 2.7.0
      */
-    String keyResolver() default "";
+    Class<?> keyResolver() default Object.class;
 
     /**
      * Some description of the key which

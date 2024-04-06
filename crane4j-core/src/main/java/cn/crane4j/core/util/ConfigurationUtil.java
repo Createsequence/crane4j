@@ -172,7 +172,7 @@ public class ConfigurationUtil {
      * @return component instance
      */
     public static <T> T getComponentFromConfiguration(
-        Class<T> resultType, Class<?> componentType, String componentName,
+        Class<T> resultType, Class<?> componentType, @Nullable String componentName,
         BiFunction<Class<T>, String, T> getByTypeAndName, Function<Class<T>, T> getByType) {
         // resolved type
         @SuppressWarnings("unchecked")

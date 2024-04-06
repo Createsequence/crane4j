@@ -8,7 +8,13 @@ import cn.crane4j.core.container.Containers;
 import cn.crane4j.core.container.lifecycle.ContainerInstanceLifecycleProcessor;
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.parser.PropertyMapping;
+import cn.crane4j.core.support.Crane4jGlobalConfiguration;
+import cn.crane4j.core.support.OperateTemplate;
 import cn.crane4j.core.support.SimpleAnnotationFinder;
+import cn.crane4j.core.support.SimpleCrane4jGlobalConfiguration;
+import cn.crane4j.core.support.container.ContainerMethodAnnotationProcessor;
+import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
+import cn.crane4j.core.support.operator.OperatorProxyFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Assert;
@@ -26,6 +32,34 @@ import java.util.Map;
  */
 @Slf4j
 public class ConfigurationUtilTest {
+
+    @Test
+    public void createOperatorProxyFactory() {
+        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
+        OperatorProxyFactory factory = ConfigurationUtil.createOperatorProxyFactory(configuration);
+        Assert.assertNotNull(factory);
+    }
+
+    @Test
+    public void createMethodInvokerContainerCreator() {
+        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
+        MethodInvokerContainerCreator containerCreator = ConfigurationUtil.createMethodInvokerContainerCreator(configuration);
+        Assert.assertNotNull(containerCreator);
+    }
+
+    @Test
+    public void createContainerMethodAnnotationProcessor() {
+        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
+        ContainerMethodAnnotationProcessor processor = ConfigurationUtil.createContainerMethodAnnotationProcessor(configuration);
+        Assert.assertNotNull(processor);
+    }
+
+    @Test
+    public void createOperateTemplate() {
+        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
+        OperateTemplate operateTemplate = ConfigurationUtil.createOperateTemplate(configuration);
+        Assert.assertNotNull(operateTemplate);
+    }
 
     @Test
     public void triggerWhenDestroyed() {

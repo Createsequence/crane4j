@@ -9,9 +9,7 @@ import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.handler.AssembleOperationHandler;
 import cn.crane4j.core.executor.handler.DisassembleOperationHandler;
-import cn.crane4j.core.executor.key.DefaultKeyResolverProviderRegistry;
-import cn.crane4j.core.executor.key.KeyResolverProvider;
-import cn.crane4j.core.executor.key.KeyResolverRegistry;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import cn.crane4j.core.parser.BeanOperationParser;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategyManager;
@@ -91,12 +89,6 @@ public class Crane4jApplicationContext extends DefaultContainerManager
      * bean name <-> container namespace
      */
     private final BiMap<String, String> beanNameNamespaceMapping = HashBiMap.create();
-
-    /**
-     * key resolver provider registry
-     */
-    @Delegate
-    private final KeyResolverRegistry keyResolverRegistry = new DefaultKeyResolverProviderRegistry();
 
     /**
      * property mapping strategy manager
@@ -275,6 +267,22 @@ public class Crane4jApplicationContext extends DefaultContainerManager
         return beanNameNamespaceMapping.get(beanName);
     }
 
+    /**
+     * Get key resolver.
+     *
+     * @param resolverType resolver type
+     * @return key resolver
+     * @since 2.7.0
+     */
+    @Override
+    public KeyResolver getKeyResolver(Class<? extends KeyResolver> resolverType) {
+        if (applicationContext.getBeanNamesForType(resolverType).length > 0) {
+            return applicationContext.getBean(resolverType);
+        }
+        return applicationContext.getAutowireCapableBeanFactory()
+            .createBean(resolverType);
+    }
+
     // ============================ life cycle ============================
 
     /**
@@ -313,16 +321,6 @@ public class Crane4jApplicationContext extends DefaultContainerManager
             .forEach((beanName, provider) -> {
                 log.info("register container provider [{}] from spring context", beanName);
                 registerContainerProvider(beanName, provider);
-            });
-        applicationContext.getBeansOfType(KeyResolverProvider.class)
-            .forEach((beanName, registry) -> {
-                log.info("register key resolver provider registry [{}] from spring context", beanName);
-                keyResolverRegistry.registerKeyResolverProvider(beanName, registry);
-            });
-        applicationContext.getBeansOfType(PropertyMappingStrategy.class)
-            .forEach((beanName, strategy) -> {
-                log.info("register property mapping strategy manager [{}]({}) from spring context", beanName, strategy);
-                propertyMappingStrategyManager.addPropertyMappingStrategy(strategy);
             });
         applicationContext.getBeansOfType(PropertyMappingStrategy.class)
             .forEach((beanName, strategy) -> {

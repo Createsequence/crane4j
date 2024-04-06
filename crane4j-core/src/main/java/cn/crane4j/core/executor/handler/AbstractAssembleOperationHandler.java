@@ -3,16 +3,24 @@ package cn.crane4j.core.executor.handler;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.EmptyContainer;
 import cn.crane4j.core.executor.AssembleExecution;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.ObjectUtils;
 import cn.crane4j.core.util.TimerUtil;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * <p>This class serves as the top-level template class
@@ -45,10 +53,15 @@ import java.util.Objects;
  * the encapsulation of {@link Target}, which may introduce unnecessary performance overhead.
  *
  * @author huangchengxing
- * @param <T> target type
  */
+@Setter
 @Slf4j
-public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembleOperationHandler.Target> implements AssembleOperationHandler {
+public abstract class AbstractAssembleOperationHandler implements AssembleOperationHandler {
+
+    /**
+     * whether ignore null key.
+     */
+    protected boolean ignoreNullKey = false;
 
     /**
      * Perform assembly operation.
@@ -66,7 +79,7 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
     }
 
     private void doProcess(Container<?> container, Collection<AssembleExecution> executions) {
-        Collection<T> targets = collectToEntities(executions);
+        Collection<Target> targets = collectToEntities(executions);
         if (container instanceof EmptyContainer || Objects.isNull(container)) {
             introspectForEntities(targets);
             return;
@@ -75,7 +88,7 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
         if (CollectionUtils.isEmpty(sources)) {
             return;
         }
-        for (T target : targets) {
+        for (Target target : targets) {
             Object source = getTheAssociatedSource(target, sources);
             if (ObjectUtils.isNotEmpty(source)) {
                 completeMapping(source, target);
@@ -89,15 +102,27 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
      * @param executions executions
      * @return {@link Target}
      */
-    protected abstract Collection<T> collectToEntities(Collection<AssembleExecution> executions);
+    private Collection<Target> collectToEntities(Collection<AssembleExecution> executions) {
+        List<Target> targets = new ArrayList<>();
+        for (AssembleExecution execution : executions) {
+            AssembleOperation operation = execution.getOperation();
+            KeyResolver resolver = determineKeyResolver(operation);
+            execution.getTargets().stream()
+                .map(t -> createTarget(execution, t, resolver.resolve(t, operation)))
+                .filter(Objects::nonNull)
+                .filter(t -> !ignoreNullKey || Objects.nonNull(t.getKey()))
+                .forEach(targets::add);
+        }
+        return targets;
+    }
 
     /**
      * When the container is {@link EmptyContainer}, introspect the object to be processed.
      *
      * @param targets targets
      */
-    protected void introspectForEntities(Collection<T> targets) {
-        for (T target : targets) {
+    protected void introspectForEntities(Collection<Target> targets) {
+        for (Target target : targets) {
             completeMapping(target.getOrigin(), target);
         }
     }
@@ -109,7 +134,14 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
      * @param targets targets
      * @return source objects
      */
-    protected abstract Map<Object, Object> getSourcesFromContainer(Container<?> container, Collection<T> targets);
+    @SuppressWarnings("unchecked")
+    protected Map<Object, Object> getSourcesFromContainer(Container<?> container, Collection<Target> targets) {
+        Set<Object> keys = targets.stream()
+            .map(Target::getKey)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        return (Map<Object, Object>)((Container<Object>)container).get(keys);
+    }
 
     /**
      * Get the data source object associated with the target object.
@@ -118,7 +150,9 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
      * @param sources sources
      * @return data source object associated with the target object
      */
-    protected abstract Object getTheAssociatedSource(T target, Map<Object, Object> sources);
+    protected Object getTheAssociatedSource(Target target, Map<Object, Object> sources) {
+        return sources.get(target.getKey());
+    }
 
     /**
      * Complete attribute mapping between the target object and the data source object.
@@ -126,13 +160,26 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
      * @param source source
      * @param target target
      */
-    protected abstract void completeMapping(Object source, T target);
+    protected abstract void completeMapping(Object source, Target target);
+
+    /**
+     * Create a {@link Target} instance.
+     *
+     * @param execution execution
+     * @param origin origin
+     * @param keyValue keyValue
+     * @return {@link Target}
+     */
+    @Nullable
+    protected Target createTarget(AssembleExecution execution, Object origin, Object keyValue) {
+        return new Target(execution, origin, keyValue);
+    }
 
     /**
      * Target object to be processed.
      */
     @Getter
-    @RequiredArgsConstructor
+    @AllArgsConstructor
     protected static class Target {
 
         /**
@@ -143,11 +190,11 @@ public abstract class AbstractAssembleOperationHandler<T extends AbstractAssembl
         /**
          * objects to be processed
          */
-        protected final Object origin;
+        protected Object origin;
 
         /**
          * value of key property
          */
-        private final Object key;
+        private Object key;
     }
 }

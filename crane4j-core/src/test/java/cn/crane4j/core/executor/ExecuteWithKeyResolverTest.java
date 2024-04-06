@@ -3,7 +3,7 @@ package cn.crane4j.core.executor;
 import cn.crane4j.annotation.Assemble;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.Containers;
-import cn.crane4j.core.executor.key.KeyResolver;
+import cn.crane4j.core.executor.handler.key.KeyResolver;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.Assert;
@@ -55,7 +55,6 @@ public class ExecuteWithKeyResolverTest extends BaseExecutorTest {
 
     @Assemble(
         container = "test",
-        keyResolver = "ReflectiveBeanKeyResolverProvider",
         keyDesc = "id:prop1, name:prop2",
         keyType = Target.class
     )

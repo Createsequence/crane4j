@@ -6,6 +6,7 @@ import cn.crane4j.annotation.MappingType;
 import cn.crane4j.core.cache.CacheableContainer;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.MethodInvokerContainer;
+import cn.crane4j.core.exception.Crane4jException;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.SimpleAnnotationFinder;
@@ -18,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -46,11 +48,14 @@ public class ContainerMethodAnnotationProcessorTest {
         Collection<MethodContainerFactory> factories = Collections.singletonList(
             new CacheableMethodContainerFactory(containerCreator, annotationFinder, configuration)
         );
-        processor = new ContainerMethodAnnotationProcessor(factories, new SimpleAnnotationFinder());
+        processor = new ContainerMethodAnnotationProcessor(new ArrayList<>(), new SimpleAnnotationFinder());
+        factories.forEach(processor::registerMethodContainerFactory);
     }
 
     @Test
     public void test() {
+        Assert.assertThrows(Crane4jException.class, () -> processor.process(new NoneMethodClass(), NoneMethodClass.class));
+
         Service target = new Service();
         Map<String, Container<?>> containerMap = processor.process(target, target.getClass()).stream()
             .collect(Collectors.toMap(Container::getNamespace, Function.identity()));
@@ -90,6 +95,10 @@ public class ContainerMethodAnnotationProcessorTest {
                 .collect(Collectors.toMap(Foo::getId, Function.identity()));
         }
     }
+
+
+    @ContainerMethod(bindMethod = "none", type = MappingType.NO_MAPPING, resultType = Foo.class)
+    private static class NoneMethodClass {}
 
     @ContainerMethod(namespace = "noneResultMethod", type = MappingType.NO_MAPPING, resultType = Foo.class)
     // 通过类注解声明父类中的容器方法
