@@ -129,11 +129,11 @@ executor.execute(foos, operations);
 
 操作执行器是影响操作的执行效率和顺序的关键组件。它默认提供了三种实现，以供用户按需选择：
 
-| 执行器                            | 是否按顺序执行 | 一次填充相同容器访问次数 | 是否异步 | 是否默认启用 |
-| --------------------------------- | -------------- | ------------------------ | -------- | ------------ |
-| `AsyncBeanOperationExecutor`      | ×              | 1                        | √        | ×            |
-| `DisorderedBeanOperationExecutor` | ×              | 1                        | ×        | √            |
-| `OrderedBeanOperationExecutor`    | √              | n                        | ×        | √            |
+| 执行器                            | 是否按顺序执行 | 一次填充相同容器访问次数 | 是否异步 |
+| --------------------------------- | -------------- | ------------------------ | -------- |
+| `AsyncBeanOperationExecutor`      | ×              | 1                        | √        |
+| `DisorderedBeanOperationExecutor` | ×              | 1                        | ×        |
+| `OrderedBeanOperationExecutor`    | √              | n                        | ×        |
 
 直接使用操作执行器的场景相对罕见，仅在需要使用少部分特殊功能时才会出现。
 

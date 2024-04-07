@@ -149,7 +149,7 @@ public Result<Page<List<UserVO>>> listUser(@RequestBody List<Integer> ids, @Requ
 
 :::tip
 
-如果未指定类型，而是让 crane4j 在运行时自动推断类型，那么类型推断时将以提取出的字段值为准。
+如果未指定类型，而是让 crane4j 在运行时自动推断类型，那么类型推断时将以提取出的字段值为准。比如在上图表示的示例中，最终推断出来的类型会是 `UserVO`。
 
 :::
 
@@ -194,7 +194,8 @@ public List<Foo> getFoo(Integer type) {
 
 :::tip
 
-除分组外，你也可以通过设置操作的应用条件来实现类似的效果，具体参见 [设置操作触发条件](./operation_condition.md) 一节。
+-   关于如何对操作分组，请参见 [操作分组](./operation_group.md) 一节。
+-   你也可以通过设置操作的应用条件来实现类似的效果，具体参见 [设置操作触发条件](./operation_condition.md) 一节。
 
 :::
 

@@ -1,6 +1,6 @@
 ## 异步填充
 
-在 crane4j 中，所有的填充操作都通过操作执行器 `BeanOperationExecutor` 完成触发，因此，你可以通过改变执行器支持异步填充，Crane4j 默认已经提供这样的执行器 
+在 crane4j 中，所有的填充操作都通过操作执行器 `BeanOperationExecutor` 完成触发，因此，你可以通过改变执行器支持异步填充，Crane4j 默认已经提供了一个异步执行器 `AsyncBeanOperationExecutor` 执行器 
 
 :::tip
 
@@ -10,35 +10,24 @@
 
 ## 1.启用执行器
 
-由于需要指定线程池，因为 Crane4j 默认并没有启用异步执行器，你需要自行启用并配置它。
-
 ### 1.1.在 Spring 环境
 
-在 Spring 中，你可以通过配置文件重新配置执行器，它将会覆盖 Crane4j 中的默认配置：
+在 Spring 中，已经默认注册了一个异步执行器，它默认使用的线程池配置如下：
 
 ~~~java
-@Configuration
-public class Crane4jConfig {
-
-    @Bean("AsyncBeanOperationExecutor")
-    public AsyncBeanOperationExecutor asyncBeanOperationExecutor(Crane4jGlobalConfiguration configuration) {
-        // 创建线程池
-        int processNum = Runtime.getRuntime().availableProcessors();
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-            processNum * 2, processNum * 2,
-            0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(10),
-            new ThreadFactoryBuilder().setNameFormat("crane4j-thread-pool-executor-%d").build(),
-            new ThreadPoolExecutor.CallerRunsPolicy()
-        );
-        // 创建异步操作执行器
-        AsyncBeanOperationExecutor operationExecutor = new AsyncBeanOperationExecutor(configuration, threadPoolExecutor);
-        // 指定每一批处理对象数
-        operationExecutor.setBatchSize(5);
-        return operationExecutor;
-    }
-}
+ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+// 最大线程数与核心线程数皆为 cpu 核心数，不设置队列大小，且允许核心线程池超时
+int processors = Runtime.getRuntime().availableProcessors();
+executor.setCorePoolSize(processors);
+executor.setMaxPoolSize(processors);
+executor.setAllowCoreThreadTimeOut(true);
+executor.setQueueCapacity(1);
+// 当触发拒绝策略时，由主线程进行继续执行任务
+executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+executor.setThreadNamePrefix("crane4j-async-executor");
 ~~~
+
+如果你需要更换线程池，你可以通过配置类重新配置执行器，它将会覆盖 Crane4j 中的默认配置。
 
 ### 1.2.在非 Spring 环境
 

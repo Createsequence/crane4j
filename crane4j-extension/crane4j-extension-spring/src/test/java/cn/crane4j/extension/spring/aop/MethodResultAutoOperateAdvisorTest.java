@@ -6,6 +6,7 @@ import cn.crane4j.annotation.ContainerMethod;
 import cn.crane4j.annotation.Disassemble;
 import cn.crane4j.annotation.Mapping;
 import cn.crane4j.annotation.MappingType;
+import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.extension.spring.DefaultCrane4jSpringConfiguration;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -30,6 +33,8 @@ import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +46,8 @@ import java.util.stream.Collectors;
 @ContextConfiguration(classes = {
     DefaultCrane4jSpringConfiguration.class,
     MethodResultAutoOperateAdvisorTest.SourceService.class,
-    MethodResultAutoOperateAdvisorTest.TargetService.class
+    MethodResultAutoOperateAdvisorTest.TargetService.class,
+    MethodResultAutoOperateAdvisorTest.ExecutorConfiguration.class
 })
 public class MethodResultAutoOperateAdvisorTest {
 
@@ -97,7 +103,7 @@ public class MethodResultAutoOperateAdvisorTest {
      */
     @Component
     protected static class TargetService {
-        @AutoOperate(type = Foo.class, on = "data")
+        @AutoOperate(executorType = AsyncBeanOperationExecutor.class, type = Foo.class, on = "data")
         public Result<List<Foo>> getFooList() {
             return new Result<>(
                 Arrays.asList(
@@ -143,5 +149,17 @@ public class MethodResultAutoOperateAdvisorTest {
         @AssembleId
         private String id;
         private String name;
+    }
+
+    @Configuration
+    protected static class ExecutorConfiguration {
+        @Bean
+        public Executor executor1() {
+            return Executors.newSingleThreadExecutor();
+        }
+        @Bean
+        public Executor executor2() {
+            return Executors.newSingleThreadExecutor();
+        }
     }
 }

@@ -18,6 +18,7 @@ import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.container.Containers;
 import cn.crane4j.core.container.lifecycle.ContainerInstanceLifecycleProcessor;
 import cn.crane4j.core.container.lifecycle.ContainerRegisterLogger;
+import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
 import cn.crane4j.core.executor.OrderedBeanOperationExecutor;
@@ -120,6 +121,7 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.StringValueResolver;
 
 import java.util.ArrayList;
@@ -129,6 +131,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -477,6 +480,23 @@ public class Crane4jAutoConfiguration {
     @Bean
     public DisorderedBeanOperationExecutor disorderedBeanOperationExecutor(ContainerManager containerManager) {
         return new DisorderedBeanOperationExecutor(containerManager);
+    }
+
+
+    @SuppressWarnings("all")
+    @ConditionalOnMissingBean
+    @Bean
+    public AsyncBeanOperationExecutor asyncBeanOperationExecutor(ContainerManager containerManager) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int processors = Runtime.getRuntime().availableProcessors();
+        executor.setCorePoolSize(processors);
+        executor.setMaxPoolSize(processors);
+        executor.setQueueCapacity(1);
+        executor.setThreadNamePrefix("crane4j-async-executor");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setAllowCoreThreadTimeOut(true);
+        executor.initialize();
+        return new AsyncBeanOperationExecutor(containerManager, executor);
     }
 
     @ConditionalOnMissingBean
