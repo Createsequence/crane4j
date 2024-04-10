@@ -58,6 +58,8 @@ import cn.crane4j.core.support.operator.OperationAnnotationProxyMethodFactory;
 import cn.crane4j.core.support.operator.OperatorProxyFactory;
 import cn.crane4j.core.support.operator.OperatorProxyMethodFactory;
 import cn.crane4j.core.support.operator.ParametersFillProxyMethodFactory;
+import cn.crane4j.core.support.proxy.DefaultProxyFactory;
+import cn.crane4j.core.support.proxy.ProxyFactory;
 import cn.crane4j.core.support.reflect.CacheablePropertyOperator;
 import cn.crane4j.core.support.reflect.ChainAccessiblePropertyOperator;
 import cn.crane4j.core.support.reflect.MapAccessiblePropertyOperator;
@@ -420,6 +422,11 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
     // ============== operator interface components ==============
 
     @Bean
+    public DefaultProxyFactory defaultProxyFactory() {
+        return DefaultProxyFactory.INSTANCE;
+    }
+
+    @Bean
     public OperationAnnotationProxyMethodFactory operationAnnotationProxyMethodFactory(ConverterManager converterManager) {
         return new OperationAnnotationProxyMethodFactory(converterManager);
     }
@@ -427,10 +434,15 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
     @Bean
     public OperatorProxyFactory operatorProxyFactory(
         AnnotationFinder annotationFinder, Crane4jGlobalConfiguration configuration,
+        ProxyFactory proxyFactory,
         Collection<OperatorProxyMethodFactory> factories) {
-        OperatorProxyFactory proxyFactory = new OperatorProxyFactory(configuration, annotationFinder);
-        factories.forEach(proxyFactory::addProxyMethodFactory);
-        return proxyFactory;
+        OperatorProxyFactory operatprProxyFactory = OperatorProxyFactory.builder()
+            .globalConfiguration(configuration)
+            .annotationFinder(annotationFinder)
+            .proxyFactory(proxyFactory)
+            .build();
+        factories.forEach(operatprProxyFactory::addProxyMethodFactory);
+        return operatprProxyFactory;
     }
 
     // ============== extension components ==============

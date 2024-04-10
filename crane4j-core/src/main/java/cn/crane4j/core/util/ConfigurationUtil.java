@@ -27,6 +27,8 @@ import cn.crane4j.core.support.operator.DynamicContainerOperatorProxyMethodFacto
 import cn.crane4j.core.support.operator.OperationAnnotationProxyMethodFactory;
 import cn.crane4j.core.support.operator.OperatorProxyFactory;
 import cn.crane4j.core.support.operator.ParametersFillProxyMethodFactory;
+import cn.crane4j.core.support.proxy.DefaultProxyFactory;
+import cn.crane4j.core.support.proxy.ProxyFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -108,7 +110,11 @@ public class ConfigurationUtil {
      */
     public static OperatorProxyFactory createOperatorProxyFactory(Crane4jGlobalConfiguration configuration) {
         AnnotationFinder annotationFinder = SimpleAnnotationFinder.INSTANCE;
-        OperatorProxyFactory operatorProxyFactory = new OperatorProxyFactory(configuration, annotationFinder);
+        OperatorProxyFactory operatorProxyFactory = OperatorProxyFactory.builder()
+            .globalConfiguration(configuration)
+            .annotationFinder(annotationFinder)
+            .proxyFactory(DefaultProxyFactory.INSTANCE)
+            .build();
         operatorProxyFactory.addProxyMethodFactory(new OperationAnnotationProxyMethodFactory(configuration.getConverterManager()));
         operatorProxyFactory.addProxyMethodFactory(new DynamicContainerOperatorProxyMethodFactory(
             configuration.getConverterManager(), SimpleParameterNameFinder.INSTANCE,

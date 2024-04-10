@@ -66,6 +66,8 @@ import cn.crane4j.core.support.operator.OperationAnnotationProxyMethodFactory;
 import cn.crane4j.core.support.operator.OperatorProxyFactory;
 import cn.crane4j.core.support.operator.OperatorProxyMethodFactory;
 import cn.crane4j.core.support.operator.ParametersFillProxyMethodFactory;
+import cn.crane4j.core.support.proxy.DefaultProxyFactory;
+import cn.crane4j.core.support.proxy.ProxyFactory;
 import cn.crane4j.core.support.reflect.AsmReflectivePropertyOperator;
 import cn.crane4j.core.support.reflect.CacheablePropertyOperator;
 import cn.crane4j.core.support.reflect.ChainAccessiblePropertyOperator;
@@ -559,12 +561,23 @@ public class Crane4jAutoConfiguration {
 
     // region ======= operator interface =======
 
+    @ConditionalOnMissingBean
+    @Bean
+    public DefaultProxyFactory defaultProxyFactory() {
+        return DefaultProxyFactory.INSTANCE;
+    }
+
     @ConditionalOnMissingBean(OperatorProxyMethodFactory.class)
     @Bean
     public OperatorProxyFactory operatorProxyFactory(
         AnnotationFinder annotationFinder, Crane4jGlobalConfiguration configuration,
+        ProxyFactory proxyFactory,
         Collection<OperatorProxyMethodFactory> factories) {
-        OperatorProxyFactory factory = new OperatorProxyFactory(configuration, annotationFinder);
+        OperatorProxyFactory factory = OperatorProxyFactory.builder()
+            .globalConfiguration(configuration)
+            .annotationFinder(annotationFinder)
+            .proxyFactory(proxyFactory)
+            .build();
         factories.forEach(factory::addProxyMethodFactory);
         return factory;
     }

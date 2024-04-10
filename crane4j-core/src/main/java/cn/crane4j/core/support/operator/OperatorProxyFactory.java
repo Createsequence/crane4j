@@ -9,9 +9,13 @@ import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.Crane4jGlobalSorter;
 import cn.crane4j.core.support.MethodInvoker;
+import cn.crane4j.core.support.SimpleAnnotationFinder;
+import cn.crane4j.core.support.proxy.DefaultProxyFactory;
+import cn.crane4j.core.support.proxy.ProxyFactory;
 import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.ReflectUtils;
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -36,29 +40,21 @@ import java.util.stream.Stream;
  * @author huangchengxing
  * @see Operator
  * @see OperatorProxyMethodFactory
+ * @see ProxyFactory
  * @since 1.3.0
  */
+@Builder
 @Slf4j
 public class OperatorProxyFactory {
 
     private static final Object NULL = new Object();
     private final Crane4jGlobalConfiguration globalConfiguration;
-    private final AnnotationFinder annotationFinder;
-    private final List<OperatorProxyMethodFactory> proxyMethodFactories;
+    @Builder.Default
+    private final AnnotationFinder annotationFinder = SimpleAnnotationFinder.INSTANCE;
+    private final List<OperatorProxyMethodFactory> proxyMethodFactories = new ArrayList<>(8);
+    @Builder.Default
+    private final ProxyFactory proxyFactory = DefaultProxyFactory.INSTANCE;
     private final Map<Class<?>, Object> proxyCaches = new ConcurrentHashMap<>(8);
-
-    /**
-     * Create an {@link OperatorProxyFactory} instance.
-     *
-     * @param globalConfiguration global configuration
-     * @param annotationFinder annotation finder
-     */
-    public OperatorProxyFactory(
-        Crane4jGlobalConfiguration globalConfiguration, AnnotationFinder annotationFinder) {
-        this.globalConfiguration = globalConfiguration;
-        this.annotationFinder = annotationFinder;
-        this.proxyMethodFactories = new ArrayList<>();
-    }
 
     /**
      * Add a {@link OperatorProxyMethodFactory} instance.
