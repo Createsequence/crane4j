@@ -51,41 +51,33 @@
 public static class Foo {
 
     // 根据从 getter 方法获取的值，从指定的数据源中获取对应的对象，然后将其name映射到当前的name中
-    @Assemble(container = "method", props = @Mapping("name"))
+    @Assemble(container = "method", prop = "name")
     public Integer getId() {
         // return value
     }
     private String name;
 
     // 根据 gender 获得对应的枚举对象，然后将其 name 属性映射到 genderName 中
-    @AssembleEnum(
-        type = Gender.class, 
-        enums = @ContainerEnum(key = "code"), 
-        props = @Mapping(ref = "genderName")
-    )
+    @AssembleEnum(type = Gender.class, prop = "name:genderName")
     private Integer gender;
     private String genderName;
     
     // 根据部门 ID 查询员工列表，并取列表中员工对象的名称映射到 empNames
     @AssembleMethod(
-        handlerType = OneToManyAssembleHandler.class,
-        targetType = empService.class,
-        method = @ContainerMethod(bindMethod = "listByDeptId", resultType = Emp.class, resultKey = "id"),
-        props = @Mapping(src = "name", ref = "empNames")
+        handlerType = OneToManyAssembleHandler.class, targetType = empService.class,
+        method = @ContainerMethod(bindMethod = "listByDeptId", resultType = Emp.class),
+        prop = "name:empNames"
     )
     private Integer deptId;
     private List<String> empNames;
     
     // 根据常量值获取对应的常量名称，并映射到 letterName
-    @AssembleConstant(
-        type = LetterConstant.class,
-        constant = @ConstantContainer(onlyPublic = true, reverse = true)
-    )
+    @AssembleConstant(type = LetterConstant.class)
     private String letter;
     private String letterName;
 
     // 将自己的 name 属性映射到 fooName
-    @Assemble(props = @Mapping(src = "name", ref = "fooName"))
+    @Assemble(prop = "name:fooName")
     private String fooName;
     
     // 将 phone 字段根据自定义策略进行处理后回填
@@ -109,15 +101,38 @@ public List<Foo> doOperate() {
 }
 ~~~
 
-结果：
+填充前：
 
 ~~~json
-[{
+{
+    "gender": 1,
+    "deptId": 10086,
+    "letter": "a",
+    "phone": "12456782563",
+    "nestedBeans": [
+        {
+            "gender": 1,
+            "deptId": 10086,
+            "letter": "a",
+            "phone": "12456782563"
+        }
+    ]
+}
+~~~
+
+填充后：
+
+~~~java
+{
     "name": "foo1",
     "gender": 1,
     "genderName": "男",
     "deptId": 10086,
-    "empNames": [ "张三", "李四", "王五" ],
+    "empNames": [
+        "张三",
+        "李四",
+        "王五"
+    ],
     "letter": "a",
     "letterName": "A",
     "fooName": "foo1",
@@ -137,31 +152,17 @@ public List<Foo> doOperate() {
             "letterName": "A",
             "fooName": "foo2",
             "phone": "124****2563"
-        },
-        {
-            "name": "foo3",
-            "gender": 1,
-            "genderName": "男",
-            "deptId": 10086,
-            "empNames": [
-                "张三",
-                "李四",
-                "王五"
-            ],
-            "letter": "a",
-            "letterName": "A",
-            "fooName": "foo3",
-            "phone": "124****2563"
         }
     ]
-}]
+}
 ~~~
 
 这就是在 springboot 环境中使用 `crane4j` 的最简单步骤，更多玩法请参见官方文档。
 
-## 友情链接
+## 友情链接 & 最佳实践
 
 - [[ hippo4j \]](https://gitee.com/agentart/hippo4j)：强大的动态线程池框架，附带监控报警功能；
+- [[[continew-admin]](https://gitee.com/continew/continew-admin)：持续迭代优化的前后端分离中后台管理系统框架，开箱即用，持续提供舒适的开发体验；
 
 ## 参与贡献和技术支持
 

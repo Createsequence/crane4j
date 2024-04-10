@@ -231,10 +231,7 @@ private static class Foo {
     @AssembleMethod(
         targetType = FooService.class, // 填充数据源为 FooService#listByIds 方法
         method = @ContainerMethod(bindMethod = "listByIds", resultType = Foo.class, resultKey = "id"),
-        props = {
-            @Mapping("name"), // Item.name -> Item.name
-            @Mapping("type") // Item.type -> Item.type
-        }
+        prop = { "name", "type" }
     )
     private id;
     private String name;

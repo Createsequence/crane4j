@@ -135,9 +135,9 @@ public class Order {
     @AssembleMethod(
         targetType = CustomerService.class, // 填充数据源为 CustomerService#listByIds 方法
         method = @ContainerMethod(bindMethod = "listByIds", resultType = Customer.class),  
-        props = {
-            @Mapping(src = "name", ref = "customerName"), // Customer.name -> Order.customerName
-            @Mapping(src = "type", ref = "customerType") // Customer.type -> Order.customerType
+        prop = {
+            "name:customerName", // Customer.name -> Order.customerName
+            "type:customerType" // Customer.type -> Order.customerType
         }
     )
     private Integer customerId;
@@ -155,9 +155,9 @@ public class Item {
     @AssembleMethod(
         targetType = ItemService.class, // 填充数据源为 CustomerService#listByIds 方法
         method = @ContainerMethod(bindMethod = "listByIds", resultType = Item.class),
-        props = {
-            @Mapping("name"), // Item.name -> Item.name
-            @Mapping("type") // Item.type -> Item.type
+        prop = {
+            "name", // Item.name -> Item.name
+            "type" // Item.type -> Item.type
         },
         handlerType = ManyToManyAssembleOperationHandler.class // 多对多
     )
@@ -231,13 +231,13 @@ public class Item {
     // 3、填充关联商品信息
     @Assemble(
         namespace = "item", 
-        props = {
-            @Mapping("name"), // Item.name -> Item.name
-            @Mapping("type") // Item.type -> Item.type
+        prop = {
+            "name", // Item.name -> Item.name
+            "type" // Item.type -> Item.type
         },
         handlerType = ManyToManyAssembleOperationHandler.class
     )
-    private id;
+    private Integer id;
     private String name;
     private String type;
 }

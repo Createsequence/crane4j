@@ -15,7 +15,7 @@ import cn.crane4j.core.support.expression.OgnlExpressionEvaluator;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -37,7 +37,7 @@ public class JsonNodeAutoOperateSerializerModifierTest {
     public void test() {
         // prepare operator
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         JsonNodeAssistant<JsonNode> jsonNodeAssistant = new JacksonJsonNodeAssistant(objectMapper);
         JsonNodePropertyOperator propertyOperator = new JsonNodePropertyOperator(jsonNodeAssistant, new ReflectivePropertyOperator());
 
