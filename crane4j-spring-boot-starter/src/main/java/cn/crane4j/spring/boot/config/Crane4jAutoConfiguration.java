@@ -82,6 +82,7 @@ import cn.crane4j.extension.spring.BeanMethodContainerRegistrar;
 import cn.crane4j.extension.spring.Crane4jApplicationContext;
 import cn.crane4j.extension.spring.MergedAnnotationFinder;
 import cn.crane4j.extension.spring.NamedComponentAliasProcessor;
+import cn.crane4j.extension.spring.SoftConcurrentMapCacheManager;
 import cn.crane4j.extension.spring.SpringCacheableContainerProcessor;
 import cn.crane4j.extension.spring.SpringConverterManager;
 import cn.crane4j.extension.spring.SpringParameterNameFinder;
@@ -104,6 +105,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -112,7 +114,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.DefaultParameterNameDiscoverer;
@@ -145,7 +146,7 @@ import java.util.stream.Collectors;
  * @see cn.crane4j.extension.spring
  */
 @Slf4j
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @RequiredArgsConstructor
 @EnableConfigurationProperties(Crane4jAutoConfiguration.Properties.class)
 public class Crane4jAutoConfiguration {
@@ -236,6 +237,12 @@ public class Crane4jAutoConfiguration {
     @Bean
     public GuavaCacheManager guavaCacheManager() {
         return new GuavaCacheManager();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public SoftConcurrentMapCacheManager softConcurrentMapCacheManager() {
+        return new SoftConcurrentMapCacheManager();
     }
 
     @Order(0)

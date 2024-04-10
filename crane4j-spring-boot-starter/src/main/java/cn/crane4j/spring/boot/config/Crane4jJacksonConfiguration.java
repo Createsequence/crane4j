@@ -14,12 +14,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Crane4j jackson configuration.
@@ -28,8 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * @see cn.crane4j.extension.jackson
  */
 @Slf4j
-@Configuration(proxyBeanMethods = false)
-@AutoConfigureAfter({Crane4jAutoConfiguration.class})
+@AutoConfiguration(after = { Crane4jAutoConfiguration.class })
 @ConditionalOnClass({ObjectMapper.class, JsonNodeAssistant.class})
 public class Crane4jJacksonConfiguration {
 

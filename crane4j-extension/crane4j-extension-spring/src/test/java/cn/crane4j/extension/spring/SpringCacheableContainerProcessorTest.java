@@ -7,6 +7,7 @@ import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.ContainerDefinition;
 import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.container.Containers;
+import cn.crane4j.extension.spring.annotation.compose.GuavaContainerCache;
 import lombok.Getter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -94,9 +95,9 @@ public class SpringCacheableContainerProcessorTest {
         Assert.assertEquals(TimeUnit.SECONDS, definition.getTimeUnit());
     }
 
+    @Getter
     @Cached
     private static class TestContainerWithMetaAnnotation implements Container<Object> {
-        @Getter
         private final String namespace = "test";
         @Override
         public Map<Object, ?> get(Collection<Object> keys) {
@@ -104,12 +105,12 @@ public class SpringCacheableContainerProcessorTest {
         }
     }
 
+    @Getter
     @ContainerCache(
         expirationTime = 1000L,
         timeUnit = TimeUnit.SECONDS
     )
     private static class TestContainerWithAnnotation implements Container<Object> {
-        @Getter
         private final String namespace = "test";
         @Override
         public Map<Object, ?> get(Collection<Object> keys) {
@@ -117,7 +118,7 @@ public class SpringCacheableContainerProcessorTest {
         }
     }
 
-    @ContainerCache(
+    @GuavaContainerCache(
         expirationTime = 1000L,
         timeUnit = TimeUnit.SECONDS
     )

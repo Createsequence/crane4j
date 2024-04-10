@@ -15,7 +15,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +23,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -36,10 +35,9 @@ import java.util.function.BiPredicate;
  * @author huangchengxing
  * @see cn.crane4j.extension.mybatis.plus
  */
-@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(Crane4jMybatisPlusAutoConfiguration.Properties.class)
 @ConditionalOnClass({MybatisPlusAutoConfiguration.class, AssembleMpAnnotationHandler.class})
-@AutoConfigureAfter({MybatisPlusAutoConfiguration.class, Crane4jAutoConfiguration.class})
+@AutoConfiguration(after = { MybatisPlusAutoConfiguration.class, Crane4jAutoConfiguration.class })
 public class Crane4jMybatisPlusAutoConfiguration {
 
     @Bean

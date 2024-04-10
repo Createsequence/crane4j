@@ -171,6 +171,10 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         return new GuavaCacheManager();
     }
 
+    @Bean
+    public SoftConcurrentMapCacheManager softConcurrentMapCacheManager() {
+        return new SoftConcurrentMapCacheManager();
+    }
 
     @Order(0)
     @Bean
