@@ -32,7 +32,7 @@ public class User {
 
 **目标**
 
-而现在，你有一个方法 `listUseInfo，它返回一个 `UserInfo` 对象：
+而现在，你有一个方法 `listUseInfo`，它返回一个 `UserInfo` 对象：
 
 ~~~java
 @Component
