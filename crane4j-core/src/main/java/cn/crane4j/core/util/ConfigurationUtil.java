@@ -17,12 +17,24 @@ import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.DefaultContainerAdapterRegister;
 import cn.crane4j.core.support.OperateTemplate;
+import cn.crane4j.core.support.ParameterNameFinder;
 import cn.crane4j.core.support.SimpleAnnotationFinder;
 import cn.crane4j.core.support.SimpleParameterNameFinder;
+import cn.crane4j.core.support.TypeResolver;
+import cn.crane4j.core.support.aop.AutoOperateProxy;
+import cn.crane4j.core.support.aop.MethodArgumentAutoOperateSupport;
+import cn.crane4j.core.support.aop.MethodResultAutoOperateSupport;
+import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
+import cn.crane4j.core.support.auto.ClassBasedAutoOperateAnnotatedElementResolver;
+import cn.crane4j.core.support.auto.ComposableAutoOperateAnnotatedElementResolver;
+import cn.crane4j.core.support.auto.MethodBasedAutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.container.ContainerMethodAnnotationProcessor;
 import cn.crane4j.core.support.container.DefaultMethodContainerFactory;
 import cn.crane4j.core.support.container.MethodContainerFactory;
 import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
+import cn.crane4j.core.support.expression.MethodBasedExpressionEvaluator;
+import cn.crane4j.core.support.expression.OgnlExpressionContext;
+import cn.crane4j.core.support.expression.OgnlExpressionEvaluator;
 import cn.crane4j.core.support.operator.DynamicContainerOperatorProxyMethodFactory;
 import cn.crane4j.core.support.operator.OperationAnnotationProxyMethodFactory;
 import cn.crane4j.core.support.operator.OperatorProxyFactory;
@@ -99,6 +111,34 @@ public class ConfigurationUtil {
             return ((Parameter)source).getName();
         }
         return defaultValue;
+    }
+
+    public static AutoOperateProxy createAutoOperateProxy(Crane4jGlobalConfiguration configuration) {
+        // init element resolver
+        TypeResolver typeResolver = configuration.getTypeResolver();
+        OgnlExpressionEvaluator expressionEvaluator = new OgnlExpressionEvaluator();
+        List<AutoOperateAnnotatedElementResolver> resolvers = new ArrayList<>();
+        resolvers.add(new MethodBasedAutoOperateAnnotatedElementResolver(configuration, typeResolver));
+        resolvers.add(new ClassBasedAutoOperateAnnotatedElementResolver(configuration, expressionEvaluator, OgnlExpressionContext::new));
+        AutoOperateAnnotatedElementResolver resolver = new ComposableAutoOperateAnnotatedElementResolver(resolvers);
+
+        // init auto operate support
+        AnnotationFinder annotationFinder = SimpleAnnotationFinder.INSTANCE;
+        ParameterNameFinder parameterNameFinder = SimpleParameterNameFinder.INSTANCE;
+        ProxyFactory proxyFactory = DefaultProxyFactory.INSTANCE;
+        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator = new MethodBasedExpressionEvaluator(
+            parameterNameFinder, expressionEvaluator, OgnlExpressionContext::new
+        );
+        MethodResultAutoOperateSupport resultAutoOperateSupport =  new MethodResultAutoOperateSupport(
+            resolver, methodBasedExpressionEvaluator
+        );
+        MethodArgumentAutoOperateSupport argumentAutoOperateSupport = new MethodArgumentAutoOperateSupport(
+            resolver, methodBasedExpressionEvaluator, parameterNameFinder, annotationFinder
+        );
+        return new AutoOperateProxy(
+            argumentAutoOperateSupport, resultAutoOperateSupport,
+            annotationFinder,  proxyFactory
+        );
     }
 
     /**
