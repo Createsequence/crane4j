@@ -8,6 +8,7 @@ import cn.crane4j.core.support.auto.AutoOperateAnnotatedElement;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.expression.MethodBasedExpressionEvaluator;
 import cn.crane4j.core.util.ArrayUtils;
+import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.ReflectUtils;
 import cn.crane4j.core.util.StringUtils;
@@ -144,7 +145,9 @@ public class MethodArgumentAutoOperateSupport {
         Map<String, AutoOperate> methodLevelAnnotations = Optional.ofNullable(argAutoOperate)
             .map(ArgAutoOperate::value)
             .map(Arrays::stream)
-            .map(s -> s.collect(Collectors.toMap(AutoOperate::value, Function.identity())))
+            .map(annotations -> annotations.map(a -> checkMethodLevelAnnotation(method, a))
+                .collect(Collectors.toMap(AutoOperate::value, Function.identity()))
+            )
             .orElseGet(Collections::emptyMap);
         Map<String, Parameter> parameterMap = ReflectUtils.resolveParameterNames(parameterNameFinder, method);
         AutoOperateAnnotatedElement[] results = new AutoOperateAnnotatedElement[parameterMap.size()];
@@ -168,5 +171,10 @@ public class MethodArgumentAutoOperateSupport {
     private boolean canApply(Method method, Object[] args, String condition) {
         return StringUtils.isEmpty(condition)
             || Boolean.TRUE.equals(expressionEvaluator.execute(condition, Boolean.class, method, args, null));
+    }
+
+    private AutoOperate checkMethodLevelAnnotation(Method method, AutoOperate autoOperate) {
+        Asserts.isNotEmpty(autoOperate.value(), "Method level @AutoOperate annotation must bind to method parameter by attribute 'value': [{}]", method);
+        return autoOperate;
     }
 }

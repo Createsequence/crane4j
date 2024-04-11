@@ -13,6 +13,8 @@ import java.util.function.BiFunction;
  */
 public class HutoolConverterManager implements ConverterManager {
 
+    public static final HutoolConverterManager INSTANCE = new HutoolConverterManager();
+
     /**
      * Get converter from target type to result type.
      *

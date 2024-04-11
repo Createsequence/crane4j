@@ -182,8 +182,8 @@ public class ConfigurationUtil {
         BiFunction<Class<T>, String, T> getByTypeAndName, Function<Class<T>, T> getByType) {
         // resolved type
         @SuppressWarnings("unchecked")
-        Class<T> actualComponentType = Objects.equals(componentType, Object.class)
-            || Objects.equals(componentType, Void.class) ? resultType : (Class<T>)componentType;
+        Class<T> actualComponentType = ClassUtils.isObjectOrVoid(componentType) ?
+            resultType : (Class<T>)componentType;
         return StringUtils.isEmpty(componentName) ?
             getByType.apply(actualComponentType) : getByTypeAndName.apply(actualComponentType, componentName);
     }

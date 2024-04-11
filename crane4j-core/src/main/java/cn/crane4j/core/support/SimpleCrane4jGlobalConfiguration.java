@@ -46,8 +46,11 @@ import cn.crane4j.core.support.reflect.PropertyOperatorHolder;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
 import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.ConfigurationUtil;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.experimental.Delegate;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -63,6 +66,7 @@ import java.util.Map;
  *
  * @author huangchengxing
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class SimpleCrane4jGlobalConfiguration
     extends DefaultContainerManager implements Crane4jGlobalConfiguration {
@@ -85,12 +89,11 @@ public class SimpleCrane4jGlobalConfiguration
      * Create a {@link SimpleCrane4jGlobalConfiguration} using the default configuration.
      *
      * @return configuration
+     * @deprecated use {@link #builder()}
      */
+    @Deprecated
     public static SimpleCrane4jGlobalConfiguration create() {
-        AnnotationFinder af = SimpleAnnotationFinder.INSTANCE;
-        ConverterManager cm = new HutoolConverterManager();
-        PropertyOperator operator = new ReflectivePropertyOperator(cm);
-        return create(af, cm, operator);
+        return builder().build();
     }
 
     /**
@@ -100,99 +103,25 @@ public class SimpleCrane4jGlobalConfiguration
      * @param converter converter manager
      * @param operator property operator
      * @return configuration
+     * @deprecated use {@link #builder()}
      */
+    @Deprecated
     public static SimpleCrane4jGlobalConfiguration create(
         AnnotationFinder annotationFinder, ConverterManager converter, PropertyOperator operator) {
-        SimpleCrane4jGlobalConfiguration configuration = new SimpleCrane4jGlobalConfiguration();
-        // basic components
-        configuration.setConverterManager(converter);
-        operator = new CacheablePropertyOperator(operator);
-        operator = new MapAccessiblePropertyOperator(operator);
-        operator = new ChainAccessiblePropertyOperator(operator);
-        operator = new PropertyOperatorHolder(operator);
-        configuration.setPropertyOperator(operator);
-        configuration.setTypeResolver(new SimpleTypeResolver());
-        // container container lifecycle lifecycle
-        Logger logger = LoggerFactory.getLogger(ContainerRegisterLogger.class);
-        configuration.registerContainerLifecycleProcessor(new ContainerRegisterLogger(logger::info));
-
-        // container providers
-        configuration.registerContainerProvider(configuration.getClass().getSimpleName(), configuration);
-        configuration.registerContainerProvider(ContainerProvider.class.getSimpleName(), configuration);
-
-        registerDefaultParserComponents(annotationFinder, converter, operator, configuration);
-        registerDefaultExecutorComponents(converter, operator, configuration);
-
-        // cache manager
-        GuavaCacheManager guavaCacheManager = new GuavaCacheManager();
-        configuration.getCacheManagerMap()
-            .put(guavaCacheManager.getName(), guavaCacheManager);
-        MapCacheManager mapCacheManager = MapCacheManager.newWeakConcurrentMapCacheManager();
-        configuration.getCacheManagerMap()
-            .put(mapCacheManager.getName(), mapCacheManager);
-
-        return configuration;
+        return builder()
+            .annotationFinder(annotationFinder)
+            .converterManager(converter)
+            .propertyOperator(operator)
+            .build();
     }
 
-    private static void registerDefaultParserComponents(AnnotationFinder annotationFinder, ConverterManager converter, PropertyOperator operator, SimpleCrane4jGlobalConfiguration configuration) {
-        // parser and condition parser
-        ConditionalTypeHierarchyBeanOperationParser beanOperationParser = new ConditionalTypeHierarchyBeanOperationParser();
-        beanOperationParser.registerConditionParser(new ConditionOnPropertyParser(annotationFinder, operator, converter));
-        beanOperationParser.registerConditionParser(new ConditionOnPropertyNotNullParser(annotationFinder, operator));
-        beanOperationParser.registerConditionParser(new ConditionOnPropertyNotEmptyParser(annotationFinder, operator));
-        beanOperationParser.registerConditionParser(new ConditionOnTargetTypeParser(annotationFinder));
-        beanOperationParser.registerConditionParser(new ConditionOnContainerParser(annotationFinder, configuration));
-        configuration.getBeanOperationParserMap().put(BeanOperationParser.class.getSimpleName(), beanOperationParser);
-        configuration.getBeanOperationParserMap().put(TypeHierarchyBeanOperationParser.class.getSimpleName(), beanOperationParser);
-        configuration.getBeanOperationParserMap().put(beanOperationParser.getName(), beanOperationParser);
-
-        // annotation handler
-        AssembleAnnotationHandler assembleAnnotationHandler = new AssembleAnnotationHandler(annotationFinder, configuration, configuration);
-        beanOperationParser.addOperationAnnotationHandler(assembleAnnotationHandler);
-        AssembleEnumAnnotationHandler assembleEnumAnnotationHandler = new AssembleEnumAnnotationHandler(annotationFinder, configuration, operator, configuration);
-        beanOperationParser.addOperationAnnotationHandler(assembleEnumAnnotationHandler);
-        DisassembleAnnotationHandler disassembleAnnotationHandler = new DisassembleAnnotationHandler(annotationFinder, configuration);
-        beanOperationParser.addOperationAnnotationHandler(disassembleAnnotationHandler);
-        MethodInvokerContainerCreator creator = new MethodInvokerContainerCreator(
-            configuration.getPropertyOperator(), configuration.getConverterManager()
-        );
-        AssembleMethodAnnotationHandler annotationHandler = new AssembleMethodAnnotationHandler(annotationFinder, configuration,
-            Collections.singletonList(new DefaultMethodContainerFactory(creator, annotationFinder)),
-            new SimplePropertyMappingStrategyManager()
-        );
-        beanOperationParser.addOperationAnnotationHandler(annotationHandler);
-        AssembleConstantAnnotationHandler assembleConstantAnnotationHandler = new AssembleConstantAnnotationHandler(annotationFinder, configuration, configuration
-        );
-        beanOperationParser.addOperationAnnotationHandler(assembleConstantAnnotationHandler);
-        AssembleKeyAnnotationHandler assembleKeyAnnotationHandler = new AssembleKeyAnnotationHandler(annotationFinder, configuration, configuration
-        );
-        beanOperationParser.addOperationAnnotationHandler(assembleKeyAnnotationHandler);
-    }
-
-    private static void registerDefaultExecutorComponents(ConverterManager converter, PropertyOperator operator, SimpleCrane4jGlobalConfiguration configuration) {
-        // operation executor
-        DisorderedBeanOperationExecutor disorderedBeanOperationExecutor = new DisorderedBeanOperationExecutor(configuration);
-        configuration.getBeanOperationExecutorMap().put(BeanOperationExecutor.class.getSimpleName(), disorderedBeanOperationExecutor);
-        configuration.getBeanOperationExecutorMap().put(disorderedBeanOperationExecutor.getName(), disorderedBeanOperationExecutor);
-        OrderedBeanOperationExecutor orderedBeanOperationExecutor = new OrderedBeanOperationExecutor(configuration, Crane4jGlobalSorter.comparator());
-        configuration.getBeanOperationExecutorMap().put(orderedBeanOperationExecutor.getName(), orderedBeanOperationExecutor);
-
-        // property mapping strategy
-        configuration.addPropertyMappingStrategy(OverwriteMappingStrategy.INSTANCE);
-        configuration.addPropertyMappingStrategy(OverwriteNotNullMappingStrategy.INSTANCE);
-        configuration.addPropertyMappingStrategy(new ReferenceMappingStrategy(operator));
-
-        // operation handlers
-        OneToOneAssembleOperationHandler oneToOneReflexAssembleOperationHandler = new OneToOneAssembleOperationHandler(operator, converter);
-        configuration.getAssembleOperationHandlerMap().put(AssembleOperationHandler.class.getSimpleName(), oneToOneReflexAssembleOperationHandler);
-        configuration.getAssembleOperationHandlerMap().put(oneToOneReflexAssembleOperationHandler.getName(), oneToOneReflexAssembleOperationHandler);
-        OneToManyAssembleOperationHandler oneToManyReflexAssembleOperationHandler = new OneToManyAssembleOperationHandler(operator, converter);
-        configuration.getAssembleOperationHandlerMap().put(oneToManyReflexAssembleOperationHandler.getName(), oneToManyReflexAssembleOperationHandler);
-        ManyToManyAssembleOperationHandler manyToManyReflexAssembleOperationHandler = new ManyToManyAssembleOperationHandler(operator, converter);
-        configuration.getAssembleOperationHandlerMap().put(manyToManyReflexAssembleOperationHandler.getName(), manyToManyReflexAssembleOperationHandler);
-        ReflectiveDisassembleOperationHandler reflectiveDisassembleOperationHandler = new ReflectiveDisassembleOperationHandler(operator);
-        configuration.getDisassembleOperationHandlerMap().put(DisassembleOperationHandler.class.getSimpleName(), reflectiveDisassembleOperationHandler);
-        configuration.getDisassembleOperationHandlerMap().put(reflectiveDisassembleOperationHandler.getName(), reflectiveDisassembleOperationHandler);
+    /**
+     * Create a {@link SimpleCrane4jGlobalConfiguration} builder.
+     *
+     * @return builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -297,5 +226,119 @@ public class SimpleCrane4jGlobalConfiguration
         CacheManager factory = cacheManagerMap.get(name);
         Asserts.isNotNull(factory, "cannot find cache manager [{}]", name);
         return factory;
+    }
+
+    /**
+     * Builder for {@link SimpleCrane4jGlobalConfiguration}.
+     *
+     * @author huangchengxing
+     */
+    @Accessors(chain = true, fluent = true)
+    @Setter
+    public static class Builder {
+        @NonNull
+        private AnnotationFinder annotationFinder = SimpleAnnotationFinder.INSTANCE;
+        @NonNull
+        private ConverterManager converterManager = HutoolConverterManager.INSTANCE;
+        @NonNull
+        private PropertyOperator propertyOperator = new ReflectivePropertyOperator(HutoolConverterManager.INSTANCE);
+        private boolean enablePropertyOperatorDecorator = true;
+        @NonNull
+        private TypeResolver typeResolver = new SimpleTypeResolver();
+        public SimpleCrane4jGlobalConfiguration build() {
+            if (enablePropertyOperatorDecorator) {
+                propertyOperator = new CacheablePropertyOperator(propertyOperator);
+                propertyOperator = new MapAccessiblePropertyOperator(propertyOperator);
+                propertyOperator = new ChainAccessiblePropertyOperator(propertyOperator);
+                propertyOperator = new PropertyOperatorHolder(propertyOperator);
+            }
+            SimpleCrane4jGlobalConfiguration configuration = new SimpleCrane4jGlobalConfiguration(typeResolver, propertyOperator, converterManager);
+            initDefaultContainerComponents(configuration);
+            initDefaultParserComponents(configuration);
+            initDefaultExecutorComponents(configuration);
+            initDefaultCacheComponents(configuration);
+            return configuration;
+        }
+
+        private static void initDefaultCacheComponents(SimpleCrane4jGlobalConfiguration configuration) {
+            // cache manager
+            GuavaCacheManager guavaCacheManager = new GuavaCacheManager();
+            configuration.getCacheManagerMap()
+                .put(guavaCacheManager.getName(), guavaCacheManager);
+            MapCacheManager mapCacheManager = MapCacheManager.newWeakConcurrentMapCacheManager();
+            configuration.getCacheManagerMap()
+                .put(mapCacheManager.getName(), mapCacheManager);
+        }
+
+        private static void initDefaultContainerComponents(SimpleCrane4jGlobalConfiguration configuration) {
+            // container container lifecycle lifecycle
+            Logger logger = LoggerFactory.getLogger(ContainerRegisterLogger.class);
+            configuration.registerContainerLifecycleProcessor(new ContainerRegisterLogger(logger::info));
+            // container providers
+            configuration.registerContainerProvider(configuration.getClass().getSimpleName(), configuration);
+            configuration.registerContainerProvider(ContainerProvider.class.getSimpleName(), configuration);
+        }
+
+        private void initDefaultParserComponents(SimpleCrane4jGlobalConfiguration configuration) {
+            // parser and condition parser
+            ConditionalTypeHierarchyBeanOperationParser beanOperationParser = new ConditionalTypeHierarchyBeanOperationParser();
+            beanOperationParser.registerConditionParser(new ConditionOnPropertyParser(annotationFinder, propertyOperator, converterManager));
+            beanOperationParser.registerConditionParser(new ConditionOnPropertyNotNullParser(annotationFinder, propertyOperator));
+            beanOperationParser.registerConditionParser(new ConditionOnPropertyNotEmptyParser(annotationFinder, propertyOperator));
+            beanOperationParser.registerConditionParser(new ConditionOnTargetTypeParser(annotationFinder));
+            beanOperationParser.registerConditionParser(new ConditionOnContainerParser(annotationFinder, configuration));
+            configuration.getBeanOperationParserMap().put(BeanOperationParser.class.getSimpleName(), beanOperationParser);
+            configuration.getBeanOperationParserMap().put(TypeHierarchyBeanOperationParser.class.getSimpleName(), beanOperationParser);
+            configuration.getBeanOperationParserMap().put(beanOperationParser.getName(), beanOperationParser);
+
+            // annotation handler
+            AssembleAnnotationHandler assembleAnnotationHandler = new AssembleAnnotationHandler(annotationFinder, configuration, configuration);
+            beanOperationParser.addOperationAnnotationHandler(assembleAnnotationHandler);
+            AssembleEnumAnnotationHandler assembleEnumAnnotationHandler = new AssembleEnumAnnotationHandler(annotationFinder, configuration, propertyOperator, configuration);
+            beanOperationParser.addOperationAnnotationHandler(assembleEnumAnnotationHandler);
+            DisassembleAnnotationHandler disassembleAnnotationHandler = new DisassembleAnnotationHandler(annotationFinder, configuration);
+            beanOperationParser.addOperationAnnotationHandler(disassembleAnnotationHandler);
+            MethodInvokerContainerCreator creator = new MethodInvokerContainerCreator(
+                configuration.getPropertyOperator(), configuration.getConverterManager()
+            );
+            AssembleMethodAnnotationHandler annotationHandler = new AssembleMethodAnnotationHandler(annotationFinder, configuration,
+                Collections.singletonList(new DefaultMethodContainerFactory(creator, annotationFinder)), new SimplePropertyMappingStrategyManager()
+            );
+            beanOperationParser.addOperationAnnotationHandler(annotationHandler);
+            AssembleConstantAnnotationHandler assembleConstantAnnotationHandler = new AssembleConstantAnnotationHandler(
+                annotationFinder, configuration, configuration
+            );
+            beanOperationParser.addOperationAnnotationHandler(assembleConstantAnnotationHandler);
+            AssembleKeyAnnotationHandler assembleKeyAnnotationHandler = new AssembleKeyAnnotationHandler(
+                annotationFinder, configuration, configuration
+            );
+            beanOperationParser.addOperationAnnotationHandler(assembleKeyAnnotationHandler);
+        }
+
+        private void initDefaultExecutorComponents(SimpleCrane4jGlobalConfiguration configuration) {
+            // operation executor
+            DisorderedBeanOperationExecutor disorderedBeanOperationExecutor = new DisorderedBeanOperationExecutor(configuration);
+            configuration.getBeanOperationExecutorMap().put(BeanOperationExecutor.class.getSimpleName(), disorderedBeanOperationExecutor);
+            configuration.getBeanOperationExecutorMap().put(disorderedBeanOperationExecutor.getName(), disorderedBeanOperationExecutor);
+            OrderedBeanOperationExecutor orderedBeanOperationExecutor = new OrderedBeanOperationExecutor(configuration, Crane4jGlobalSorter.comparator());
+            configuration.getBeanOperationExecutorMap().put(orderedBeanOperationExecutor.getName(), orderedBeanOperationExecutor);
+
+            // property mapping strategy
+            configuration.addPropertyMappingStrategy(OverwriteMappingStrategy.INSTANCE);
+            configuration.addPropertyMappingStrategy(OverwriteNotNullMappingStrategy.INSTANCE);
+            configuration.addPropertyMappingStrategy(new ReferenceMappingStrategy(propertyOperator));
+
+            // operation handlers
+            OneToOneAssembleOperationHandler oneToOneReflexAssembleOperationHandler = new OneToOneAssembleOperationHandler(propertyOperator, converterManager);
+            configuration.getAssembleOperationHandlerMap().put(AssembleOperationHandler.class.getSimpleName(), oneToOneReflexAssembleOperationHandler);
+            configuration.getAssembleOperationHandlerMap().put(oneToOneReflexAssembleOperationHandler.getName(), oneToOneReflexAssembleOperationHandler);
+            OneToManyAssembleOperationHandler oneToManyReflexAssembleOperationHandler = new OneToManyAssembleOperationHandler(propertyOperator, converterManager);
+            configuration.getAssembleOperationHandlerMap().put(oneToManyReflexAssembleOperationHandler.getName(), oneToManyReflexAssembleOperationHandler);
+            ManyToManyAssembleOperationHandler manyToManyReflexAssembleOperationHandler = new ManyToManyAssembleOperationHandler(propertyOperator, converterManager);
+            configuration.getAssembleOperationHandlerMap().put(manyToManyReflexAssembleOperationHandler.getName(), manyToManyReflexAssembleOperationHandler);
+            ReflectiveDisassembleOperationHandler reflectiveDisassembleOperationHandler = new ReflectiveDisassembleOperationHandler(propertyOperator);
+            configuration.getDisassembleOperationHandlerMap().put(DisassembleOperationHandler.class.getSimpleName(), reflectiveDisassembleOperationHandler);
+            configuration.getDisassembleOperationHandlerMap().put(reflectiveDisassembleOperationHandler.getName(), reflectiveDisassembleOperationHandler);
+        }
     }
 }

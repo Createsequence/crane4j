@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  */
 @Repeatable(value = AssembleEnum.List.class)
 @Documented
-@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AssembleEnum {
 
@@ -176,6 +176,7 @@ public @interface AssembleEnum {
      *     <li>{@code 'a:b'}：equivalent to {@code @Mapping(src = 'a', ref = 'b')}；</li>
      *     <li>{@code 'a'}：equivalent to {@code @Mapping(src = 'a', ref = 'a')} or {@code @Mapping('a')}；</li>
      *     <li>{@code ':a'}：equivalent to {@code @Mapping(ref = 'a')}；</li>
+     *     <li>{@code 'a:'}：equivalent to {@code @Mapping(src = 'a')}；</li>
      * </ul>
      *
      * @return attribute mappings
@@ -214,7 +215,7 @@ public @interface AssembleEnum {
      * @author huangchengxing
      */
     @Documented
-    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
     @interface List {
         AssembleEnum[] value() default {};

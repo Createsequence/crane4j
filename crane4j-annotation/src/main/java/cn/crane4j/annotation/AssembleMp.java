@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  */
 @Repeatable(value = AssembleMp.List.class)
 @Documented
-@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AssembleMp {
 
@@ -169,6 +169,7 @@ public @interface AssembleMp {
      *     <li>{@code 'a:b'}：equivalent to {@code @Mapping(src = 'a', ref = 'b')}；</li>
      *     <li>{@code 'a'}：equivalent to {@code @Mapping(src = 'a', ref = 'a')} or {@code @Mapping('a')}；</li>
      *     <li>{@code ':a'}：equivalent to {@code @Mapping(ref = 'a')}；</li>
+     *     <li>{@code 'a:'}：equivalent to {@code @Mapping(src = 'a')}；</li>
      * </ul>
      *
      * @return attribute mappings
@@ -207,7 +208,7 @@ public @interface AssembleMp {
      * @author huangchengxing
      */
     @Documented
-    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
     @interface List {
         AssembleMp[] value() default {};

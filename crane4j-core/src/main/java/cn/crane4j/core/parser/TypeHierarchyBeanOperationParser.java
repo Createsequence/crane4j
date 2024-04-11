@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -313,7 +314,7 @@ public class TypeHierarchyBeanOperationParser implements BeanOperationParser {
     }
 
     protected BeanOperations doResolveToOperations(AnnotatedElement source) {
-        if (ReflectUtils.isJdkElement(source)) {
+        if (ReflectUtils.isJdkElement(source) && !(source instanceof Parameter)) {
             return BeanOperations.empty();
         }
         BeanOperations operations = createBeanOperations(source, false);

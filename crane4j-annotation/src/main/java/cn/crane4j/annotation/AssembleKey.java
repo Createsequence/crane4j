@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  */
 @Repeatable(value = AssembleKey.List.class)
 @Documented
-@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AssembleKey {
 
@@ -104,6 +104,7 @@ public @interface AssembleKey {
      *     <li>{@code 'a:b'}：equivalent to {@code @Mapping(src = 'a', ref = 'b')}；</li>
      *     <li>{@code 'a'}：equivalent to {@code @Mapping(src = 'a', ref = 'a')} or {@code @Mapping('a')}；</li>
      *     <li>{@code ':a'}：equivalent to {@code @Mapping(ref = 'a')}；</li>
+     *     <li>{@code 'a:'}：equivalent to {@code @Mapping(src = 'a')}；</li>
      * </ul>
      *
      * @return attribute mappings
@@ -141,7 +142,7 @@ public @interface AssembleKey {
      * @author huangchengxing
      */
     @Documented
-    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
     @interface List {
         AssembleKey[] value() default {};
