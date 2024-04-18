@@ -55,6 +55,7 @@
         <ognl.version>3.1.19</ognl.version>
         <springboot.version>2.7.18</springboot.version>
         <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
+        <jmh.version>1.32</jmh.version>
         <!--plugins-->
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <maven-javadoc-plugin>3.2.0</maven-javadoc-plugin>
@@ -113,6 +114,19 @@
                 <groupId>ognl</groupId>
                 <artifactId>ognl</artifactId>
                 <version>${ognl.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
 
