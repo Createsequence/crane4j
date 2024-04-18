@@ -5,6 +5,7 @@ import cn.crane4j.core.support.converter.ConverterManager;
 import cn.crane4j.core.util.CollectionUtils;
 import com.esotericsoftware.reflectasm.FieldAccess;
 import com.esotericsoftware.reflectasm.MethodAccess;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author huangchengxing
  * @author tangcent
  */
+@NoArgsConstructor
 public class AsmReflectivePropertyOperator extends ReflectivePropertyOperator {
 
     /**

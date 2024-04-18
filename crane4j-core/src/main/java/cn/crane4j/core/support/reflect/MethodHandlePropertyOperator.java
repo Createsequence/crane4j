@@ -2,6 +2,8 @@ package cn.crane4j.core.support.reflect;
 
 import cn.crane4j.core.support.MethodInvoker;
 import cn.crane4j.core.support.converter.ConverterManager;
+import cn.crane4j.core.util.ReflectUtils;
+import cn.crane4j.core.util.Try;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -12,6 +14,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
@@ -73,16 +76,14 @@ public class MethodHandlePropertyOperator extends ReflectivePropertyOperator {
             if (Modifier.isStatic(field.getModifiers())) {
                 return super.createSetterInvokerForField(propertyName, field);
             }
-            try {
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-                if (!field.isAccessible()) {
-                    field.setAccessible(true);
-                }
-                return new MethodHandleSetter(lookup.unreflectSetter(field));
-            } catch (Exception e) {
+            return Try.<MethodInvoker>of(() -> {
+                ReflectUtils.setAccessible(field);
+                MethodHandle handle = MethodHandles.lookup().unreflectSetter(field);
+                return new MethodHandleSetter(handle);
+            }).getOrElseGet(e -> {
                 log.warn("cannot find method handle of setter for field: {}", field, e);
-            }
-            return super.createSetterInvokerForField(propertyName, field);
+                return super.createSetterInvokerForField(propertyName, field);
+            });
         }
 
         /**
@@ -97,16 +98,34 @@ public class MethodHandlePropertyOperator extends ReflectivePropertyOperator {
             if (Modifier.isStatic(field.getModifiers())) {
                 return super.createGetterInvokerForField(propertyName, field);
             }
-            try {
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-                if (!field.isAccessible()) {
-                    field.setAccessible(true);
-                }
-                return new MethodHandleGetter(lookup.unreflectGetter(field));
-            } catch (Exception e) {
-                log.warn("cannot find method handle of getter for field: {}", field, e);
-            }
-            return super.createGetterInvokerForField(propertyName, field);
+            return Try.<MethodInvoker>of(() -> {
+                ReflectUtils.setAccessible(field);
+                MethodHandle handle = MethodHandles.lookup().unreflectGetter(field);
+                return new MethodHandleGetter(handle);
+            }).getOrElseGet(e -> {
+                log.debug("cannot find method handle of getter for field: {}", field, e);
+                return super.createGetterInvokerForField(propertyName, field);
+            });
+        }
+
+        /**
+         * Create {@link MethodInvoker} according to the specified method.
+         *
+         * @param propertyName property name
+         * @param method       getter method or setter method
+         * @return {@link MethodInvoker}
+         */
+        @Override
+        protected @Nullable MethodInvoker createInvokerForMethod(String propertyName, Method method) {
+            return Try.of(() -> {
+                ReflectUtils.setAccessible(method);
+                MethodHandle methodHandle = MethodHandles.lookup().unreflect(method);
+                return method.getParameterCount() > 0 ?
+                    new MethodHandleSetter(methodHandle) : new MethodHandleGetter(methodHandle);
+            }).getOrElseGet(e -> {
+                log.debug("cannot find method handle of getter method: {}", method, e);
+                return super.createInvokerForMethod(propertyName, method);
+            });
         }
     }
 

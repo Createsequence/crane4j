@@ -128,9 +128,7 @@ public class ClassUtils {
         Objects.requireNonNull(type, "type must not null");
         try {
             Constructor<?> constructor = type.getDeclaredConstructor();
-            if (!constructor.isAccessible()) {
-                constructor.setAccessible(true);
-            }
+            ReflectUtils.setAccessible(constructor);
             return (T) constructor.newInstance(args);
         } catch (InstantiationException | IllegalAccessException
                  | InvocationTargetException | NoSuchMethodException e) {
@@ -149,9 +147,7 @@ public class ClassUtils {
     public static boolean isInstantiable(Class<?> type, @Nullable Consumer<Throwable> fallback) {
         try {
             Constructor<?> constructor = type.getDeclaredConstructor();
-            if (!constructor.isAccessible()) {
-                constructor.setAccessible(true);
-            }
+            ReflectUtils.setAccessible(constructor);
             constructor.newInstance();
             return true;
         } catch (Exception e) {
