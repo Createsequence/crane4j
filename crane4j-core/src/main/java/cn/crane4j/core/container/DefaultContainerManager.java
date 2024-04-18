@@ -3,6 +3,7 @@ package cn.crane4j.core.container;
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.ConfigurationUtil;
+import cn.crane4j.core.util.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +109,10 @@ public class DefaultContainerManager implements ContainerManager {
     @Override
     public ContainerDefinition registerContainer(ContainerDefinition definition) {
         Asserts.isNotNull(definition, "definition must not null");
+        if (StringUtils.isEmpty(definition.getNamespace())) {
+            // TODO add assertion to check namespace is not empty GtiHub#261
+            log.warn("container namespace is empty, it will be ignored");
+        }
         Object key = getCacheKey(definition.getNamespace());
         containerMap.compute(key, (k, t) -> {
             // process new definition

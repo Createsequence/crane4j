@@ -6,6 +6,7 @@ import cn.crane4j.core.support.DataProvider;
 import cn.crane4j.core.support.SimpleAnnotationFinder;
 import cn.crane4j.core.support.reflect.PropertyOperator;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
+import cn.crane4j.core.util.Asserts;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -43,8 +44,10 @@ public class Containers {
      * @since 2.2.0
      */
     public static <K> Container<K> empty(String namespace) {
+        checkNamespace(namespace);
         return forMap(namespace, Collections.emptyMap());
     }
+
 
     /**
      * <p>Create a key-value pair container based on the specified type enumeration.<br />
@@ -56,6 +59,7 @@ public class Containers {
      * @return container
      */
     public static <K> ImmutableMapContainer<K> forMap(String namespace, Map<K, ?> data) {
+        checkNamespace(namespace);
         return ImmutableMapContainer.forMap(namespace, data);
     }
 
@@ -66,9 +70,10 @@ public class Containers {
      * @param namespace namespace
      * @param <K>       key type
      * @return container
-     * @see DataProvider#empty() 
+     * @see DataProvider#empty()
      */
     public static <K> ImmutableMapContainer<K> forEmptyData(String namespace) {
+        checkNamespace(namespace);
         return ImmutableMapContainer.forMap(namespace, Collections.emptyMap());
     }
 
@@ -83,6 +88,7 @@ public class Containers {
      * @see LambdaContainer#forLambda(String, DataProvider)
      */
     public static <K> LambdaContainer<K> forLambda(String namespace, DataProvider<K, ?> lambda) {
+        checkNamespace(namespace);
         return LambdaContainer.forLambda(namespace, lambda);
     }
 
@@ -162,5 +168,10 @@ public class Containers {
      */
     public static <K> Container<K> forEnum(Class<? extends Enum<?>> enumType) {
         return forEnum(enumType, SimpleAnnotationFinder.INSTANCE, ReflectivePropertyOperator.INSTANCE);
+    }
+
+    private static void checkNamespace(String namespace) {
+        // fix https://github.com/opengoofy/crane4j/issues/262
+        Asserts.isNotEmpty(namespace, "namespace must not be empty");
     }
 }
