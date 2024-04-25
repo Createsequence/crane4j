@@ -1,17 +1,20 @@
 package cn.crane4j.core.support.aop;
 
-import cn.crane4j.annotation.ArgAutoOperate;
 import cn.crane4j.annotation.AutoOperate;
+import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElement;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.expression.MethodBasedExpressionEvaluator;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.StringUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * <p>一个用于在方法调用后，根据{@link AutoOperate}注解的配置，对方法返回结果进行填充的辅助类。
@@ -23,7 +26,6 @@ import java.util.Objects;
  * <p>辅助类支持通过{@link AutoOperate#condition()}设置的条件表达式，
  * 每次执行时都会通过{@link MethodBasedExpressionEvaluator}来进行求值，
  * 只有当表达式返回true或者 "true" 字符串时，才会执行填充。
- *
  * <hr/>
  *
  * <p>Support class for completing the operation for the result of method which annotated by {@link AutoOperate}.
@@ -41,49 +43,33 @@ import java.util.Objects;
  * @see AutoOperateAnnotatedElementResolver
  */
 @Slf4j
+@RequiredArgsConstructor
 public class MethodResultAutoOperateSupport {
 
     protected final Map<Method, AutoOperateAnnotatedElement> methodCaches = CollectionUtils.newWeakConcurrentMap();
     protected final AutoOperateAnnotatedElementResolver elementResolver;
     protected final MethodBasedExpressionEvaluator expressionEvaluator;
-
-    /**
-     * Create a {@link MethodResultAutoOperateSupport} instance
-     *
-     * @param elementResolver element handler
-     * @param expressionEvaluator method base expression evaluator delegate
-     */
-    public MethodResultAutoOperateSupport(
-        AutoOperateAnnotatedElementResolver elementResolver, MethodBasedExpressionEvaluator expressionEvaluator) {
-        this.elementResolver = elementResolver;
-        this.expressionEvaluator = expressionEvaluator;
-    }
+    protected final AnnotationFinder annotationFinder;
 
     /**
      * After the method is called, process the returning result
-     * of the method according to the configuration of {@link ArgAutoOperate} annotation.
+     * of the method according to the configuration of {@link AutoOperate} annotation.
      *
-     * @param annotation annotation
      * @param method method
      * @param result result
      * @param args args
      */
-    public void afterMethodInvoke(AutoOperate annotation, Method method, Object result, Object[] args) {
+    public void afterMethodInvoke(Method method, Object result, Object[] args) {
         // has annotation?
-        if (Objects.isNull(annotation) || Objects.equals(method.getReturnType(), Void.TYPE)) {
+        if (Objects.isNull(result)) {
             return;
         }
         // get and build method cache
         log.debug("process result for [{}]", method);
         // fix https://gitee.com/opengoofy/crane4j/issues/I82EAC
-        AutoOperateAnnotatedElement element = CollectionUtils.computeIfAbsent(methodCaches, method, m -> {
-            AutoOperateAnnotatedElement aoe = elementResolver.resolve(m, annotation);
-            if (Objects.isNull(aoe)) {
-                log.warn("cannot apply auto operate for method [{}], because return type [{}] have no operation configuration", m, m.getReturnType());
-                return AutoOperateAnnotatedElement.EMPTY;
-            }
-            return aoe;
-        });
+        AutoOperateAnnotatedElement element = CollectionUtils.computeIfAbsent(
+            methodCaches, method, this::resolveReturn
+        );
         // fix https://github.com/opengoofy/crane4j/issues/204
         if (element == AutoOperateAnnotatedElement.EMPTY) {
             return;
@@ -93,6 +79,25 @@ public class MethodResultAutoOperateSupport {
         if (support(method, result, args, condition)) {
             element.execute(result);
         }
+    }
+
+    /**
+     * Resolve the {@link AutoOperate} annotation on the method
+     *
+     * @param method method
+     * @return operation configuration of method result,
+     * if not found, return {@link AutoOperateAnnotatedElement#EMPTY}
+     * @see AutoOperateAnnotatedElement#EMPTY
+     */
+    @NonNull
+    protected AutoOperateAnnotatedElement resolveReturn(Method method) {
+        if (Objects.equals(Void.TYPE, method.getReturnType())) {
+            log.warn("cannot apply auto operate for method [{}], because return type is void", method);
+            return AutoOperateAnnotatedElement.EMPTY;
+        }
+        return Optional.ofNullable(annotationFinder.findAnnotation(method, AutoOperate.class))
+            .map(annotation -> elementResolver.resolve(method, annotation))
+            .orElse(AutoOperateAnnotatedElement.EMPTY);
     }
 
     /**

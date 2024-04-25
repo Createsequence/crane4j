@@ -6,6 +6,7 @@ import cn.crane4j.annotation.Mapping;
 import cn.crane4j.core.container.LambdaContainer;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.ParameterNameFinder;
+import cn.crane4j.core.support.SimpleAnnotationFinder;
 import cn.crane4j.core.support.SimpleCrane4jGlobalConfiguration;
 import cn.crane4j.core.support.SimpleParameterNameFinder;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
@@ -40,13 +41,13 @@ public class MethodResultAutoOperateSupportTest {
 
     @Before
     public void init() {
-        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
+        Crane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.builder().build();
         ParameterNameFinder parameterNameFinder = new SimpleParameterNameFinder();
         MethodBasedExpressionEvaluator expressionEvaluator = new MethodBasedExpressionEvaluator(
             parameterNameFinder, new OgnlExpressionEvaluator(), method -> new OgnlExpressionContext()
         );
         AutoOperateAnnotatedElementResolver resolver = new MethodBasedAutoOperateAnnotatedElementResolver(configuration, configuration.getTypeResolver());
-        support = new MethodResultAutoOperateSupport(resolver, expressionEvaluator);
+        support = new MethodResultAutoOperateSupport(resolver, expressionEvaluator, SimpleAnnotationFinder.INSTANCE);
 
         configuration.registerContainer(LambdaContainer.<Integer>forLambda(
             "test", ids -> ids.stream().map(id -> new Foo(id, "name" + id))
@@ -58,34 +59,34 @@ public class MethodResultAutoOperateSupportTest {
     public void beforeMethodInvoke() {
         Method method = ReflectUtils.getMethod(this.getClass(), "method", Collection.class);
         Assert.assertNotNull(method);
-        AutoOperate annotation = method.getAnnotation(AutoOperate.class);
-        Assert.assertNotNull(annotation);
         Result<Foo> foo = new Result<>(new Foo(1));
-        support.afterMethodInvoke(annotation, method, foo, new Object[]{ Arrays.asList(1, 2) });
+        support.afterMethodInvoke(method, foo, new Object[]{ Arrays.asList(1, 2) });
         Assert.assertEquals("name1", foo.getData().getName());
-        support.afterMethodInvoke(null, method, foo, new Object[]{ Arrays.asList(1, 2) });
+
+        method = ReflectUtils.getMethod(this.getClass(), "notAnnotatedMethodWhenCannotResolveOperationsFromCurrentElement", Collection.class);
+        Assert.assertNotNull(method);
+        support.afterMethodInvoke(method, foo, new Object[]{ Arrays.asList(1, 2) });
     }
 
     @Test
     public void beforeMethodInvokeWhenResolveOperationsFromCurrentElement() {
         Method method = ReflectUtils.getMethod(this.getClass(), "methodWhenResolveOperationsFromCurrentElement", Collection.class);
         Assert.assertNotNull(method);
-        AutoOperate annotation = method.getAnnotation(AutoOperate.class);
-        Assert.assertNotNull(annotation);
         Result<Foo2> foo = new Result<>(new Foo2(1));
-        support.afterMethodInvoke(annotation, method, foo, new Object[]{ Arrays.asList(1, 2) });
+        support.afterMethodInvoke(method, foo, new Object[]{ Arrays.asList(1, 2) });
         Assert.assertEquals("name1", foo.getData().getName());
-        support.afterMethodInvoke(null, method, foo, new Object[]{ Arrays.asList(1, 2) });
+
+        method = ReflectUtils.getMethod(this.getClass(), "notAnnotatedMethodWhenCannotResolveOperationsFromCurrentElement", Collection.class);
+        Assert.assertNotNull(method);
+        support.afterMethodInvoke(method, foo, new Object[]{ Arrays.asList(1, 2) });
     }
 
     @Test
     public void beforeMethodInvokeWhenCannotResolveOperationsFromCurrentElement() {
         Method method = ReflectUtils.getMethod(this.getClass(), "methodWhenCannotResolveOperationsFromCurrentElement", Collection.class);
         Assert.assertNotNull(method);
-        AutoOperate annotation = method.getAnnotation(AutoOperate.class);
-        Assert.assertNotNull(annotation);
         Result<Foo2> foo = new Result<>(new Foo2(1));
-        support.afterMethodInvoke(annotation, method, foo, new Object[]{ Arrays.asList(1, 2) });
+        support.afterMethodInvoke(method, foo, new Object[]{ Arrays.asList(1, 2) });
         Assert.assertNull(foo.getData().getName());
     }
 
@@ -102,6 +103,9 @@ public class MethodResultAutoOperateSupportTest {
 
     @AutoOperate(on = "data", condition = "true", resolveOperationsFromCurrentElement = true)
     private Result<Collection<Foo2>> methodWhenCannotResolveOperationsFromCurrentElement(Collection<Integer> ids) {
+        return new Result<>(ids.stream().map(Foo2::new).collect(Collectors.toList()));
+    }
+    private Result<Collection<Foo2>> notAnnotatedMethodWhenCannotResolveOperationsFromCurrentElement(Collection<Integer> ids) {
         return new Result<>(ids.stream().map(Foo2::new).collect(Collectors.toList()));
     }
 

@@ -13,7 +13,7 @@ import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.ReflectUtils;
 import cn.crane4j.core.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -36,7 +36,6 @@ import java.util.stream.Stream;
  * <p>辅助类支持通过{@link AutoOperate#condition()}设置的条件表达式，
  * 每次执行时都会通过{@link MethodBasedExpressionEvaluator}来进行求值，
  * 只有当表达式返回true或者 "true" 字符串时，才会执行填充。
- *
  * <hr/>
  *
  * <p>Support class for completing the operation of data
@@ -98,11 +97,9 @@ public class MethodArgumentAutoOperateSupport {
         if (ArrayUtils.isEmpty(args)) {
             return;
         }
-        // cache resolved parameters
-        ArgAutoOperate methodLevelAnnotation = annotationFinder.findAnnotation(method, ArgAutoOperate.class);
         // fix https://gitee.com/opengoofy/crane4j/issues/I82EAC
         AutoOperateAnnotatedElement[] elements = CollectionUtils.computeIfAbsent(
-            methodParameterCaches, method, name -> resolveParameters(methodLevelAnnotation, method)
+            methodParameterCaches, method, this::resolveParameters
         );
         if (elements == EMPTY_ELEMENTS) {
             return;
@@ -133,22 +130,17 @@ public class MethodArgumentAutoOperateSupport {
      * Analyze the annotations on methods and method parameters
      * to obtain the operation configuration of method parameters.
      *
-     * @param argAutoOperate argAutoOperate
      * @param method method
-     * @return operation configuration of method parameters
+     * @return operation configuration of method parameters,
+     * if not found, return {@link #EMPTY_ELEMENTS}
+     * @see #EMPTY_ELEMENTS
      */
-    protected AutoOperateAnnotatedElement[] resolveParameters(@Nullable ArgAutoOperate argAutoOperate, Method method) {
+    protected AutoOperateAnnotatedElement[] resolveParameters(Method method) {
         if (method.getParameterCount() < 1) {
             log.warn("cannot apply auto operate for method [{}], because it has no parameters", method);
             return EMPTY_ELEMENTS;
         }
-        Map<String, AutoOperate> methodLevelAnnotations = Optional.ofNullable(argAutoOperate)
-            .map(ArgAutoOperate::value)
-            .map(Arrays::stream)
-            .map(annotations -> annotations.map(a -> checkMethodLevelAnnotation(method, a))
-                .collect(Collectors.toMap(AutoOperate::value, Function.identity()))
-            )
-            .orElseGet(Collections::emptyMap);
+        Map<String, AutoOperate> methodLevelAnnotations = resolveMethodLevelAnnotations(method);
         Map<String, Parameter> parameterMap = ReflectUtils.resolveParameterNames(parameterNameFinder, method);
         AutoOperateAnnotatedElement[] results = new AutoOperateAnnotatedElement[parameterMap.size()];
         int index = 0;
@@ -159,13 +151,25 @@ public class MethodArgumentAutoOperateSupport {
             AutoOperate annotation = Optional
                 .ofNullable(annotationFinder.getAnnotation(param, AutoOperate.class))
                 .orElse(methodLevelAnnotations.get(paramName));
-            results[index++] = Objects.isNull(annotation) ? null : elementResolver.resolve(param, annotation);
+            results[index++] = Objects.isNull(annotation) ?
+                null : elementResolver.resolve(param, annotation);
         }
         if (Stream.of(results).allMatch(Objects::isNull)) {
             log.warn("cannot apply auto operate for method [{}], because all parameters have no operation configuration", method);
             return EMPTY_ELEMENTS;
         }
         return results;
+    }
+
+    @NonNull
+    private Map<String, AutoOperate> resolveMethodLevelAnnotations(Method method) {
+        return Optional.ofNullable(annotationFinder.findAnnotation(method, ArgAutoOperate.class))
+            .map(ArgAutoOperate::value)
+            .map(Arrays::stream)
+            .map(annotations -> annotations.map(a -> checkMethodLevelAnnotation(method, a))
+                .collect(Collectors.toMap(AutoOperate::value, Function.identity()))
+            )
+            .orElseGet(Collections::emptyMap);
     }
 
     /**

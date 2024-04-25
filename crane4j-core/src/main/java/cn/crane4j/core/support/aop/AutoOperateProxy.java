@@ -30,6 +30,10 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class AutoOperateProxy {
 
+    private final ResultHandler resultHandler = new ResultHandler();
+    private final ArgumentsHandler argumentsHandler = new ArgumentsHandler();
+    private final ResultAndArgumentsHandler resultAndArgumentsHandler = new ResultAndArgumentsHandler();
+
     private final MethodArgumentAutoOperateSupport methodArgumentAutoOperateSupport;
     private final MethodResultAutoOperateSupport methodResultAutoOperateSupport;
     private final AnnotationFinder annotationFinder;
@@ -56,20 +60,24 @@ public class AutoOperateProxy {
     @NonNull
     private Map<Method, MethodHandler> resolveMethodHandler(Class<?> targetType) {
         Map<Method, MethodHandler> methodHandles = new HashMap<>(16);
-        ReflectUtils.traverseTypeHierarchy(targetType, t -> {
-            if (!Objects.equals(Object.class, t)) {
-                Stream.of(ReflectUtils.getDeclaredMethods(t))
-                    .filter(this::isHandleableMethod)
-                    .forEach(m -> {
-                        MethodHandler handler = determineHandler(m);
-                        if (Objects.nonNull(handler)) {
-                            // keep only the override method
-                            methodHandles.putIfAbsent(m, handler);
-                        }
-                    });
+        ReflectUtils.traverseTypeHierarchy(targetType, type -> {
+            if (!Objects.equals(Object.class, type)) {
+                processHandleableMethods(type, methodHandles);
             }
         });
         return methodHandles;
+    }
+
+    private void processHandleableMethods(Class<?> t, Map<Method, MethodHandler> methodHandles) {
+        Stream.of(ReflectUtils.getDeclaredMethods(t))
+            .filter(this::isHandleableMethod)
+            .forEach(m -> {
+                MethodHandler handler = determineHandler(m);
+                if (Objects.nonNull(handler)) {
+                    // keep only the override method
+                    methodHandles.putIfAbsent(m, handler);
+                }
+            });
     }
 
     private boolean isHandleableMethod(Method method) {
@@ -85,10 +93,10 @@ public class AutoOperateProxy {
         AutoOperate annotation = annotationFinder.getAnnotation(method, AutoOperate.class);
         if (Objects.isNull(annotation)) {
             return needHandleArgs(method) ?
-                new ArgumentsHandler() : null;
+                argumentsHandler : null;
         }
         return needHandleArgs(method) ?
-            new ResultAndArgumentsHandler(annotation) : new ResultHandler(annotation);
+            resultAndArgumentsHandler : resultHandler;
     }
 
     @RequiredArgsConstructor
@@ -125,13 +133,10 @@ public class AutoOperateProxy {
 
     @RequiredArgsConstructor
     private class ResultHandler implements MethodHandler {
-        private final AutoOperate annotation;
         @Override
         public Object invoke(Object target, Method method, Object[] arguments) {
             Object result = ReflectUtils.invoke(target, method, arguments);
-            methodResultAutoOperateSupport.afterMethodInvoke(
-                annotation, method, result, arguments
-            );
+            methodResultAutoOperateSupport.afterMethodInvoke(method, result, arguments);
             return result;
         }
     }
@@ -147,14 +152,11 @@ public class AutoOperateProxy {
 
     @RequiredArgsConstructor
     private class ResultAndArgumentsHandler implements MethodHandler {
-        private final AutoOperate annotation;
         @Override
         public Object invoke(Object target, Method method, Object[] arguments) {
             methodArgumentAutoOperateSupport.beforeMethodInvoke(method, arguments);
             Object result = ReflectUtils.invoke(target, method, arguments);
-            methodResultAutoOperateSupport.afterMethodInvoke(
-                annotation, method, result, arguments
-            );
+            methodResultAutoOperateSupport.afterMethodInvoke(method, result, arguments);
             return result;
         }
     }

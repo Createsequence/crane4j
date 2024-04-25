@@ -130,7 +130,7 @@ public class ConfigurationUtil {
             parameterNameFinder, expressionEvaluator, OgnlExpressionContext::new
         );
         MethodResultAutoOperateSupport resultAutoOperateSupport =  new MethodResultAutoOperateSupport(
-            resolver, methodBasedExpressionEvaluator
+            resolver, methodBasedExpressionEvaluator, SimpleAnnotationFinder.INSTANCE
         );
         MethodArgumentAutoOperateSupport argumentAutoOperateSupport = new MethodArgumentAutoOperateSupport(
             resolver, methodBasedExpressionEvaluator, parameterNameFinder, annotationFinder

@@ -51,11 +51,10 @@ public class MethodResultAutoOperateAdvisor
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
         Method method = methodInvocation.getMethod();
-        AutoOperate annotation = AnnotatedElementUtils.findMergedAnnotation(method, AutoOperate.class);
         Object result = methodInvocation.proceed();
         try {
             methodResultAutoOperateSupport.getObject()
-                .afterMethodInvoke(annotation, method, result, methodInvocation.getArguments());
+                .afterMethodInvoke(method, result, methodInvocation.getArguments());
         } catch (Exception ex) {
             log.error("cannot auto operate result for method [{}]", method, ex);
             throw ex;

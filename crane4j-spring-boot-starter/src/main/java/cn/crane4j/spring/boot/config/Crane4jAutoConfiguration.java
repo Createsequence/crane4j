@@ -656,9 +656,9 @@ public class Crane4jAutoConfiguration {
     @Bean
     public MethodResultAutoOperateSupport methodResultAutoOperateSupport(
         AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
-        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator) {
+        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator, AnnotationFinder annotationFinder) {
         return new MethodResultAutoOperateSupport(
-            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator
+            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator, annotationFinder
         );
     }
 
