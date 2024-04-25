@@ -44,7 +44,7 @@
 
     <properties>
         <!--revision-->
-        <revision>2.7.0</revision>
+        <revision>2.8.0-SNAPSHOT</revision>
         <!--build-->
         <java.version>1.8</java.version>
         <server.id>maven-central</server.id>

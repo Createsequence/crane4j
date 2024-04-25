@@ -49,6 +49,8 @@ import cn.crane4j.core.support.OperateTemplate;
 import cn.crane4j.core.support.ParameterNameFinder;
 import cn.crane4j.core.support.SimpleTypeResolver;
 import cn.crane4j.core.support.TypeResolver;
+import cn.crane4j.core.support.aop.MethodArgumentAutoOperateSupport;
+import cn.crane4j.core.support.aop.MethodResultAutoOperateSupport;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.auto.ClassBasedAutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.auto.ComposableAutoOperateAnnotatedElementResolver;
@@ -103,6 +105,8 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -114,7 +118,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Role;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.Ordered;
@@ -574,6 +580,7 @@ public class Crane4jAutoConfiguration {
         return DefaultProxyFactory.INSTANCE;
     }
 
+    @Lazy
     @ConditionalOnMissingBean(OperatorProxyMethodFactory.class)
     @Bean
     public OperatorProxyFactory operatorProxyFactory(
@@ -646,6 +653,17 @@ public class Crane4jAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
+    @Bean
+    public MethodResultAutoOperateSupport methodResultAutoOperateSupport(
+        AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
+        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator) {
+        return new MethodResultAutoOperateSupport(
+            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator
+        );
+    }
+
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(
         prefix = CRANE_PREFIX,
         name = "enable-method-result-auto-operate",
@@ -653,11 +671,23 @@ public class Crane4jAutoConfiguration {
     )
     @Bean
     public MethodResultAutoOperateAdvisor methodResultAutoOperateAdvisor(
-        AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
-        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator) {
-        return new MethodResultAutoOperateAdvisor(autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator);
+        ObjectProvider<MethodResultAutoOperateSupport> methodResultAutoOperateSupport) {
+        return new MethodResultAutoOperateAdvisor(methodResultAutoOperateSupport);
     }
 
+    @ConditionalOnMissingBean
+    @Bean
+    public MethodArgumentAutoOperateSupport methodArgumentAutoOperateSupport(
+        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator,
+        AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
+        ParameterNameFinder parameterNameDiscoverer, AnnotationFinder annotationFinder) {
+        return new MethodArgumentAutoOperateSupport(
+            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator,
+            parameterNameDiscoverer, annotationFinder
+        );
+    }
+
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
         prefix = CRANE_PREFIX,
@@ -666,12 +696,8 @@ public class Crane4jAutoConfiguration {
     )
     @Bean
     public MethodArgumentAutoOperateAdvisor methodArgumentAutoOperateAdvisor(
-        MethodBasedExpressionEvaluator methodBasedExpressionEvaluator,
-        AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
-        ParameterNameFinder parameterNameDiscoverer, AnnotationFinder annotationFinder) {
-        return new MethodArgumentAutoOperateAdvisor(autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator,
-            parameterNameDiscoverer, annotationFinder
-        );
+        ObjectProvider<MethodArgumentAutoOperateSupport> methodArgumentAutoOperateSupport) {
+        return new MethodArgumentAutoOperateAdvisor(methodArgumentAutoOperateSupport);
     }
 
     // endregion

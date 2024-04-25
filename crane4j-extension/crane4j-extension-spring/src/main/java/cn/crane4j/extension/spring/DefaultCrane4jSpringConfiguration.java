@@ -42,6 +42,8 @@ import cn.crane4j.core.support.OperateTemplate;
 import cn.crane4j.core.support.ParameterNameFinder;
 import cn.crane4j.core.support.SimpleTypeResolver;
 import cn.crane4j.core.support.TypeResolver;
+import cn.crane4j.core.support.aop.MethodArgumentAutoOperateSupport;
+import cn.crane4j.core.support.aop.MethodResultAutoOperateSupport;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.auto.ClassBasedAutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.auto.ComposableAutoOperateAnnotatedElementResolver;
@@ -78,11 +80,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Role;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.Ordered;
@@ -435,18 +441,19 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         return new OperationAnnotationProxyMethodFactory(converterManager);
     }
 
+    @Lazy
     @Bean
     public OperatorProxyFactory operatorProxyFactory(
         AnnotationFinder annotationFinder, Crane4jGlobalConfiguration configuration,
         ProxyFactory proxyFactory,
         Collection<OperatorProxyMethodFactory> factories) {
-        OperatorProxyFactory operatprProxyFactory = OperatorProxyFactory.builder()
+        OperatorProxyFactory operatorProxyFactory = OperatorProxyFactory.builder()
             .globalConfiguration(configuration)
             .annotationFinder(annotationFinder)
             .proxyFactory(proxyFactory)
             .build();
-        factories.forEach(operatprProxyFactory::addProxyMethodFactory);
-        return operatprProxyFactory;
+        factories.forEach(operatorProxyFactory::addProxyMethodFactory);
+        return operatorProxyFactory;
     }
 
     // ============== extension components ==============
@@ -495,20 +502,37 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
     }
 
     @Bean
-    public MethodResultAutoOperateAdvisor methodResultAutoOperateAdvisor(
+    public MethodResultAutoOperateSupport methodResultAutoOperateSupport(
         AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
         MethodBasedExpressionEvaluator methodBasedExpressionEvaluator) {
-        return new MethodResultAutoOperateAdvisor(autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator);
+        return new MethodResultAutoOperateSupport(
+            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator
+        );
+    }
+
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    @Bean
+    public MethodResultAutoOperateAdvisor methodResultAutoOperateAdvisor(
+        ObjectProvider<MethodResultAutoOperateSupport> methodResultAutoOperateSupport) {
+        return new MethodResultAutoOperateAdvisor(methodResultAutoOperateSupport);
     }
 
     @Bean
-    public MethodArgumentAutoOperateAdvisor methodArgumentAutoOperateAdvisor(
+    public MethodArgumentAutoOperateSupport methodArgumentAutoOperateSupport(
         MethodBasedExpressionEvaluator methodBasedExpressionEvaluator,
         AutoOperateAnnotatedElementResolver autoOperateAnnotatedElementResolver,
         ParameterNameFinder parameterNameDiscoverer, AnnotationFinder annotationFinder) {
-        return new MethodArgumentAutoOperateAdvisor(autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator,
+        return new MethodArgumentAutoOperateSupport(
+            autoOperateAnnotatedElementResolver, methodBasedExpressionEvaluator,
             parameterNameDiscoverer, annotationFinder
         );
+    }
+
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    @Bean
+    public MethodArgumentAutoOperateAdvisor methodArgumentAutoOperateAdvisor(
+        ObjectProvider<MethodArgumentAutoOperateSupport> methodArgumentAutoOperateSupport) {
+        return new MethodArgumentAutoOperateAdvisor(methodArgumentAutoOperateSupport);
     }
 
     @Bean

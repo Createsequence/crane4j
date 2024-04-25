@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  *
  * <p>辅助类支持通过{@link AutoOperate#condition()}设置的条件表达式，
  * 每次执行时都会通过{@link MethodBasedExpressionEvaluator}来进行求值，
- * 只有当表达式返回true或者"true"时，才会执行填充。
+ * 只有当表达式返回true或者 "true" 字符串时，才会执行填充。
  *
  * <hr/>
  *
@@ -166,6 +166,16 @@ public class MethodArgumentAutoOperateSupport {
             return EMPTY_ELEMENTS;
         }
         return results;
+    }
+
+    /**
+     * Clear resources when destroying the bean.
+     */
+    public void destroy() {
+        for (AutoOperateAnnotatedElement[] elements : methodParameterCaches.values()) {
+            Arrays.fill(elements, null);
+        }
+        methodParameterCaches.clear();
     }
 
     private boolean canApply(Method method, Object[] args, String condition) {

@@ -10,6 +10,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -35,7 +37,8 @@ import java.util.Set;
 public class OperatorBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 
     @Override
-    public void registerBeanDefinitions(@NonNull AnnotationMetadata importingClassMetadata, @NonNull BeanDefinitionRegistry registry) {
+    public void registerBeanDefinitions(
+        @NonNull AnnotationMetadata importingClassMetadata, @NonNull BeanDefinitionRegistry registry) {
         Class<OperatorScan> annotationType = OperatorScan.class;
         Set<Class<?>> types = ContainerResolveUtils.resolveComponentTypesFromMetadata(
             AnnotationAttributes.fromMap(importingClassMetadata.getAnnotationAttributes(annotationType.getName())),
@@ -51,8 +54,8 @@ public class OperatorBeanDefinitionRegistrar implements ImportBeanDefinitionRegi
     /**
      * Register bean definitions.
      *
-     * @param classes              classes which resolve from annotation attributes
-     * @param registry             bean definition registry
+     * @param classes classes which resolve from annotation attributes
+     * @param registry bean definition registry
      */
     protected void doRegisterBeanDefinitions(Set<Class<?>> classes, BeanDefinitionRegistry registry) {
         classes.stream()
@@ -66,8 +69,9 @@ public class OperatorBeanDefinitionRegistrar implements ImportBeanDefinitionRegi
         // register factory bean
         BeanDefinition factoryBeanDefinition = BeanDefinitionBuilder.genericBeanDefinition(OperatorProxyFactoryBean.class)
             .addAutowiredProperty("operatorProxyFactory")
+            .setAutowireMode(AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE)
+            .setRole(BeanDefinition.ROLE_INFRASTRUCTURE)
             .addPropertyValue("operatorType", operatorType)
-            .setAutowireMode(2)
             .getBeanDefinition();
         String factoryBeanName = AnnotationBeanNameGenerator.INSTANCE.generateBeanName(factoryBeanDefinition, registry);
         factoryBeanName += "#" + operatorType.getName();
@@ -90,12 +94,15 @@ public class OperatorBeanDefinitionRegistrar implements ImportBeanDefinitionRegi
     @Setter
     public static class OperatorProxyFactoryBean<T> implements FactoryBean<T> {
 
-        private OperatorProxyFactory operatorProxyFactory;
+        private ObjectProvider<OperatorProxyFactory> operatorProxyFactory;
         private Class<T> operatorType;
 
         @Override
         public T getObject() {
-            return operatorProxyFactory.get(operatorType);
+            // fix https://github.com/opengoofy/crane4j/issues/269
+            // use lazy injection to avoid early initialization
+            // when the DefaultListableBeanFactory#getBeanNamesForType method is called
+            return operatorProxyFactory.getObject().get(operatorType);
         }
 
         @Override
