@@ -19,35 +19,9 @@ public enum MappingType {
      * <p>When using this type,
      * the return {@link ContainerMethod#resultKey()} and {@link ContainerMethod#resultType()} are <strong>ignored</strong>.
      *
-     * @see 2.4.0
-     * @deprecated Use {@link #ORDER_OF_KEYS} instead.
-     */
-    @Deprecated
-    NONE,
-
-    /**
-     * <p>Instead of mapping by key,
-     * combine key and value directly into a Map collection in sequence,
-     * such as {@code Collections#zip}.
-     *
-     * <p>When using this type,
-     * the return {@link ContainerMethod#resultKey()} and {@link ContainerMethod#resultType()} are <strong>ignored</strong>.
-     *
      * @see 2.5.0
      */
     ORDER_OF_KEYS,
-
-    /**
-     * <p>The return value of the method is already a {@link Map} set grouped by the key value.
-     * No further conversion is required according to the key value.
-     *
-     * <p>When using this type,
-     * the return {@link ContainerMethod#resultKey()} and {@link ContainerMethod#resultType()} are <strong>ignored</strong>.
-     *
-     * @deprecated Use {@link #NO_MAPPING} instead.
-     */
-    @Deprecated
-    MAPPED,
 
     /**
      * <p>The return value of the method is already a {@link Map} set grouped by the key value.

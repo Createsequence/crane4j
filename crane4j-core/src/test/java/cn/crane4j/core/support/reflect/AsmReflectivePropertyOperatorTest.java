@@ -74,7 +74,7 @@ public class AsmReflectivePropertyOperatorTest {
     }
 
     @AllArgsConstructor
-    private static class Foo {
+    protected static class Foo {
 
         @Getter
         private Integer id;

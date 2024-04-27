@@ -12,6 +12,8 @@ import cn.crane4j.core.support.reflect.ReflectiveMethodInvoker;
 import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.ClassUtils;
 import cn.crane4j.core.util.StringUtils;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -53,10 +55,17 @@ public class MethodInvokerContainerCreator {
         @Nullable Object target, Method method, MappingType mappingType,
         @Nullable String namespace, Class<?> resultType, String resultKey, DuplicateStrategy duplicateStrategy) {
         log.debug("create method container from [{}]", method);
-        return doCreateContainer(
-            target, getMethodInvoker(target, method), method,
-            mappingType, namespace, resultType, resultKey, duplicateStrategy
-        );
+        MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreation.builder()
+            .target(target)
+            .method(method)
+            .methodInvoker(getMethodInvoker(target, method))
+            .mappingType(mappingType)
+            .namespace(namespace)
+            .resultType(resultType)
+            .resultKey(resultKey)
+            .duplicateStrategy(duplicateStrategy)
+            .build();
+        return doCreateContainer(containerCreation);
     }
 
     /**
@@ -74,21 +83,29 @@ public class MethodInvokerContainerCreator {
     public MethodInvokerContainer createContainer(
         @Nullable Object target, MethodInvoker methodInvoker, MappingType mappingType,
         @Nullable String namespace, Class<?> resultType, String resultKey, DuplicateStrategy duplicateStrategy) {
-        return doCreateContainer(
-            target, methodInvoker, null,
-            mappingType, namespace, resultType, resultKey, duplicateStrategy
-        );
+        MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreation.builder()
+            .target(target)
+            .methodInvoker(methodInvoker)
+            .mappingType(mappingType)
+            .namespace(namespace)
+            .resultType(resultType)
+            .resultKey(resultKey)
+            .duplicateStrategy(duplicateStrategy)
+            .build();
+        return doCreateContainer(containerCreation);
     }
 
-    private MethodInvokerContainer doCreateContainer(
-        @Nullable Object target, MethodInvoker methodInvoker, @Nullable Method method, MappingType mappingType,
-        @Nullable String namespace, Class<?> resultType, String resultKey, DuplicateStrategy duplicateStrategy) {
+    private MethodInvokerContainer doCreateContainer(MethodInvokerContainerCreation containerCreation) {
+        Method method = containerCreation.getMethod();
+        String namespace = getNamespace(method, containerCreation.getNamespace());
+        MappingType mappingType = containerCreation.getMappingType();
+        MethodInvoker methodInvoker = containerCreation.getMethodInvoker();
+        Object target = containerCreation.getTarget();
 
-        namespace = getNamespace(method, namespace);
         MethodInvokerContainer container;
-        if (mappingType == MappingType.NO_MAPPING || mappingType == MappingType.MAPPED) {
+        if (mappingType == MappingType.NO_MAPPING) {
             container = doCreateNoMappingContainer(target, methodInvoker, method, namespace);
-        } else if (mappingType == MappingType.ORDER_OF_KEYS || mappingType == MappingType.NONE) {
+        } else if (mappingType == MappingType.ORDER_OF_KEYS) {
             Asserts.isNotNull(method, "method must not be null when mapping type is [{}]", mappingType);
             // fix https://gitee.com/opengoofy/crane4j/issues/I97R7E
             container = isSingleParameterMethod(method) ?
@@ -96,10 +113,16 @@ public class MethodInvokerContainerCreator {
                 doCreateOrderOfKeysContainer(target, methodInvoker, method, namespace);
         } else if (mappingType == MappingType.ONE_TO_ONE) {
             container = doCreateOneToOneContainer(
-                target, methodInvoker, method, namespace, resultType, resultKey, duplicateStrategy);
+                target, methodInvoker, method, namespace,
+                containerCreation.getResultType(), containerCreation.getResultKey(),
+                containerCreation.getDuplicateStrategy()
+            );
         } else if (mappingType == MappingType.ONE_TO_MANY) {
             container = doCreateOneToManyContainer(
-                target, methodInvoker, method, namespace, resultType, resultKey, duplicateStrategy);
+                target, methodInvoker, method, namespace,
+                containerCreation.getResultType(), containerCreation.getResultKey(),
+                containerCreation.getDuplicateStrategy()
+            );
         } else {
             throw new Crane4jException("unsupported mapping type: " + mappingType);
         }
@@ -228,5 +251,21 @@ public class MethodInvokerContainerCreator {
         MethodInvoker keyGetter = propertyOperator.findGetter(resultType, resultKey);
         Asserts.isNotNull(keyGetter, "cannot find getter method [{}] on [{}]", resultKey, resultType);
         return keyGetter;
+    }
+
+    @Getter
+    @Builder
+    private static class MethodInvokerContainerCreation {
+        @Nullable
+        private final Object target;
+        @Nullable
+        private final Method method;
+        private final MethodInvoker methodInvoker;
+        private final MappingType mappingType;
+        @Nullable
+        private final String namespace;
+        private final Class<?> resultType;
+        private final String resultKey;
+        private final DuplicateStrategy duplicateStrategy;
     }
 }

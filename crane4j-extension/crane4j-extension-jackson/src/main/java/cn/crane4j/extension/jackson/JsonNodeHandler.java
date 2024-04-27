@@ -32,7 +32,6 @@ public class JsonNodeHandler {
         JsonNode jsonNode = jsonNodeAssistant.convertTargetToJsonNode(node);
         String actualPropertyName = jsonNodeAssistant.determinePropertyName(propertyName);
         JsonNode result = jsonNode.get(actualPropertyName);
-        // TODO how to handle the value if accept type of container is not string?
         // if the result is a value node, return the text value of it
         return Objects.nonNull(result) && result.isValueNode() ? result.asText() : result;
     }

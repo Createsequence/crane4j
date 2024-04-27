@@ -47,7 +47,6 @@ public class MethodResultAutoOperateAdvisor
             && AnnotatedElementUtils.isAnnotated(m, AutoOperate.class)
     );
 
-
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
         Method method = methodInvocation.getMethod();
