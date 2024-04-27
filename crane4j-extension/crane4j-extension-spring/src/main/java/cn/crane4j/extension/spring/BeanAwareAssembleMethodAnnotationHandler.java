@@ -75,9 +75,11 @@ public class BeanAwareAssembleMethodAnnotationHandler extends AssembleMethodAnno
         if (target != null) {
             return target;
         }
-
-        // TODO replace to applicationContext.getAutowireCapableBeanFactory().createBean()
-        return super.getTargetInstance(targetType, annotation);
+        target = super.getTargetInstance(targetType, annotation);
+        if (Objects.nonNull(target)) {
+            applicationContext.getAutowireCapableBeanFactory().autowireBean(target);
+        }
+        return target;
     }
 
     @Nullable
