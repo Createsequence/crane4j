@@ -6,14 +6,14 @@ import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategyManager;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.container.MethodContainerFactory;
+import cn.crane4j.core.util.Try;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
-import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.Optional;
 
 /**
  * An {@link AssembleMethodAnnotationHandler} implementation,
@@ -56,9 +56,9 @@ public class BeanAwareAssembleMethodAnnotationHandler extends AssembleMethodAnno
     @NonNull
     @Override
     protected Class<?> resolveTargetType(AssembleMethod annotation) {
-        Object target = findTargetFromSpring(annotation.targetType(), annotation.target());
-        return Objects.isNull(target) ?
-            super.resolveTargetType(annotation) : AopUtils.getTargetClass(target);
+        return findTargetFromSpring(annotation.targetType(), annotation.target())
+            .<Class<?>>map(AopUtils::getTargetClass)
+            .orElseGet(() -> super.resolveTargetType(annotation));
     }
 
     /**
@@ -71,43 +71,14 @@ public class BeanAwareAssembleMethodAnnotationHandler extends AssembleMethodAnno
     @Nullable
     @Override
     protected Object getTargetInstance(Class<?> targetType, AssembleMethod annotation) {
-        Object target = findTargetFromSpring(targetType, annotation.target());
-        if (target != null) {
-            return target;
-        }
-
-        // TODO replace to applicationContext.getAutowireCapableBeanFactory().createBean()
-        return super.getTargetInstance(targetType, annotation);
+        return findTargetFromSpring(targetType, annotation.target())
+            .orElseGet(() -> applicationContext.getAutowireCapableBeanFactory().createBean(targetType));
     }
 
-    @Nullable
-    private Object findTargetFromSpring(Class<?> beanType, String beanName) {
-        // try to get bean from application context by name
-        Object target = tryGet(() -> applicationContext.getBean(beanName));
-        if (Objects.nonNull(target)) {
-            return target;
-        }
-
-        // try to get bean from application context by name and type
-        target = tryGet(() -> applicationContext.getBean(beanName, beanType));
-        if (Objects.nonNull(target)) {
-            return target;
-        }
-
-        // try to get bean from application context by type
-        target = tryGet(() -> applicationContext.getBean(beanType));
-        if (Objects.nonNull(target)) {
-            return target;
-        }
-        return null;
-    }
-
-    private static <T> T tryGet(Supplier<T> supplier) {
-        try {
-            return supplier.get();
-        } catch (Exception ex) {
-            // ignore
-        }
-        return null;
+    private Optional<Object> findTargetFromSpring(Class<?> beanType, String beanName) {
+        return Try.of(() -> applicationContext.getBean(beanName))
+            .getOrElseTry(ex -> applicationContext.getBean(beanName, beanType))
+            .getOrElseTry(ex -> applicationContext.getBean(beanType))
+            .getOptional();
     }
 }

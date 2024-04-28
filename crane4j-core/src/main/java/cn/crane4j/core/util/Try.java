@@ -2,10 +2,12 @@ package cn.crane4j.core.util;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -19,14 +21,55 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class Try<T> {
 
+    /**
+     * Create an action that does nothing.
+     *
+     * @param runnable the runnable
+     * @return the try action instance
+     */
     public static Try<Void> of(CheckedRunnable runnable) {
         Asserts.isNotNull(runnable, "runnable must not be null");
         return new Try<>(runnable.toSupplier());
     }
 
+    /**
+     * Create an action that does nothing and returns a result.
+     *
+     * @param supplier the supplier of the result
+     * @param <R> the type of the result
+     * @return the try action instance
+     */
     public static <R> Try<R> of(CheckedSupplier<R> supplier) {
         Asserts.isNotNull(supplier, "supplier must not be null");
         return new Try<>(supplier);
+    }
+
+    /**
+     * Create a successful action.
+     *
+     * @param result the result
+     * @param <R> the type of the result
+     * @return the try action instance
+     */
+    public static <R> Try<R> success(R result) {
+        Try<R> action = new Try<>(() -> result);
+        action.performed = true;
+        action.result = result;
+        return action;
+    }
+
+    /**
+     * Create a failed action.
+     *
+     * @param ex the exception
+     * @param <R> the type of the result
+     * @return the try action instance
+     */
+    public static <R> Try<R> failure(Throwable ex) {
+        Try<R> action = new Try<>(() -> { throw ex; });
+        action.performed = true;
+        action.cause = ex;
+        return action;
     }
 
     /**
@@ -105,22 +148,12 @@ public class Try<T> {
     }
 
     /**
-     * Get the result.
-     *
-     * @return the result
-     * @see #isSuccess()
-     */
-    public T getResult() {
-        perform();
-        return result;
-    }
-
-    /**
      * Get the cause of the exception.
      *
      * @return the exception
      * @see #isFailure()
      */
+    @Nullable
     public Throwable getCause() {
         perform();
         return cause;
@@ -131,6 +164,7 @@ public class Try<T> {
      *
      * @param subscriber the subscriber of the result
      * @return this
+     * @throws IllegalStateException if the computation has been performed
      */
     public Try<T> subscribeFailure(Consumer<Throwable> subscriber) {
         Asserts.isFalse(performed, "the computation has been performed");
@@ -147,6 +181,7 @@ public class Try<T> {
      *
      * @param subscriber the subscriber of the result
      * @return this
+     * @throws IllegalStateException if the computation has been performed
      */
     public Try<T> subscribeSuccess(Consumer<T> subscriber) {
         Asserts.isFalse(performed, "the computation has been performed");
@@ -178,9 +213,21 @@ public class Try<T> {
      * Get the result or null if the supplier throws an exception.
      *
      * @return the result or null
+     * @see #getOptional()
      */
     public T getOrNull() {
         return isSuccess() ? result : null;
+    }
+
+    /**
+     * Get the optional result.
+     *
+     * @return the optional result
+     * @see #getOrNull()
+     */
+    public Optional<T> getOptional() {
+        return isSuccess() ?
+            Optional.ofNullable(result) : Optional.empty();
     }
 
     /**
@@ -216,6 +263,16 @@ public class Try<T> {
             return result;
         }
         throw function.apply(cause);
+    }
+
+    /**
+     * Get this or the other instance if this action is failed.
+     *
+     * @param function the function to get the other instance
+     * @return this or the other instance
+     */
+    public Try<T> getOrElseTry(CheckedFunction<Throwable, T> function) {
+        return isSuccess() ? this : of(() -> function.apply(cause));
     }
 
     // ======== run operations ========
