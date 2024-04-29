@@ -4,6 +4,7 @@ import cn.crane4j.annotation.DuplicateStrategy;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -110,6 +111,20 @@ public class MethodInvokerContainerTest {
         Assert.assertEquals(foo2, map.get("1"));
     }
 
+    @Test
+    public void getWhenWrapper() {
+        MethodInvokerContainer container = MethodInvokerContainer.oneToOne(
+            MethodInvokerContainer.class.getSimpleName(),
+            (t, arg) -> service.wrapperMethod((Collection<String>)arg[0]),
+            service, t -> ((Foo) t).key, DuplicateStrategy.ALERT
+        );
+        container.setExtractor((t, args) -> ((Result<Collection<Foo>>)t).getData());
+        Assert.assertEquals(MethodInvokerContainer.class.getSimpleName(), container.getNamespace());
+        Map<Object, ?> map = container.get(Arrays.asList("2", "1"));
+        Assert.assertEquals(foo1, map.get("1"));
+        Assert.assertEquals(foo2, map.get("2"));
+    }
+
     @AllArgsConstructor
     @EqualsAndHashCode
     @Getter
@@ -128,5 +143,14 @@ public class MethodInvokerContainerTest {
         public List<Foo> noneMappedMethod(Collection<String> key) {
             return Objects.isNull(key) ? null : Arrays.asList(foo1, foo2);
         }
+        public Result<Collection<Foo>> wrapperMethod(Collection<String> key) {
+            return new Result<>(Arrays.asList(foo1, foo2));
+        }
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    public static class Result<T> {
+        private final T data;
     }
 }

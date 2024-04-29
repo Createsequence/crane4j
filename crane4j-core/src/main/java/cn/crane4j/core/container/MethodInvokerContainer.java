@@ -6,6 +6,8 @@ import cn.crane4j.core.support.MethodInvoker;
 import cn.crane4j.core.util.CollectionUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +58,25 @@ public abstract class MethodInvokerContainer implements Container<Object> {
      */
     @Nullable
     protected final Object target;
+
+    /**
+     * The extractor will be used to extract the data from the wrapped object.
+     */
+    @Setter
+    @Nullable
+    protected MethodInvoker extractor;
+
+    /**
+     * extract data from the result if possible.
+     *
+     * @param result result
+     * @return extracted data
+     * @since 2.8.0
+     */
+    @Nullable
+    protected Object extractIfPossible(@NonNull Object result) {
+        return Objects.nonNull(extractor) ? extractor.invoke(result) : result;
+    }
 
     /**
      * Create a standard method data source container.
@@ -139,10 +161,10 @@ public abstract class MethodInvokerContainer implements Container<Object> {
         @Override
         public Map<Object, ?> get(Collection<Object> keys) {
             Map<Object, Object> results = new HashMap<>(keys.size());
-            keys.forEach(key -> {
-                Object result = methodInvoker.invoke(target, key);
-                results.put(key, result);
-            });
+            keys.forEach(key -> Optional.ofNullable(methodInvoker.invoke(target, key))
+                .map(this::extractIfPossible)
+                .ifPresent(result -> results.put(key, result))
+            );
             return results;
         }
     }
@@ -167,11 +189,10 @@ public abstract class MethodInvokerContainer implements Container<Object> {
         @Override
         public Map<Object, ?> get(Collection<Object> keys) {
             Object[] arguments = resolveArguments(keys);
-            Object result = methodInvoker.invoke(target, arguments);
-            if (Objects.isNull(result)) {
-                return Collections.emptyMap();
-            }
-            return resolveResult(keys, result);
+            return Optional.ofNullable(methodInvoker.invoke(target, arguments))
+                .map(this::extractIfPossible)
+                .map(result -> resolveResult(keys, result))
+                .orElse(Collections.emptyMap());
         }
 
         /**

@@ -81,9 +81,16 @@ public class DefaultMethodContainerFactory implements MethodContainerFactory {
     }
 
     private Container<Object> createContainer(Object source, Method method, ContainerMethod annotation) {
-        return methodInvokerContainerCreator.createContainer(
-            source, method, annotation.type(), annotation.namespace(),
-            annotation.resultType(), annotation.resultKey(), annotation.duplicateStrategy()
-        );
+        MethodInvokerContainerCreator.MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreator.MethodInvokerContainerCreation.builder()
+            .target(source)
+            .method(method)
+            .mappingType(annotation.type())
+            .namespace(annotation.namespace())
+            .resultType(annotation.resultType())
+            .resultKey(annotation.resultKey())
+            .duplicateStrategy(annotation.duplicateStrategy())
+            .on(annotation.on())
+            .build();
+        return methodInvokerContainerCreator.createContainer(containerCreation);
     }
 }

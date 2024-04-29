@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Support class for {@link MethodInvokerContainer} creation.
@@ -39,69 +40,37 @@ public class MethodInvokerContainerCreator {
     protected final PropertyOperator propertyOperator;
     protected final ConverterManager converterManager;
 
-    /**
-     * Create a {@link MethodInvokerContainer} from the given method.
-     *
-     * @param target method's calling object, if the method is static, it can be null
-     * @param method method
-     * @param mappingType mapping type
-     * @param namespace namespace, if null, use method name as namespace
-     * @param resultType result type
-     * @param resultKey result key
-     * @param duplicateStrategy duplicate strategy
-     * @return {@link MethodInvokerContainer}
-     */
     public MethodInvokerContainer createContainer(
-        @Nullable Object target, Method method, MappingType mappingType,
-        @Nullable String namespace, Class<?> resultType, String resultKey, DuplicateStrategy duplicateStrategy) {
-        log.debug("create method container from [{}]", method);
-        MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreation.builder()
-            .target(target)
-            .method(method)
-            .methodInvoker(getMethodInvoker(target, method))
-            .mappingType(mappingType)
-            .namespace(namespace)
-            .resultType(resultType)
-            .resultKey(resultKey)
-            .duplicateStrategy(duplicateStrategy)
-            .build();
-        return doCreateContainer(containerCreation);
-    }
-
-    /**
-     * Create a {@link MethodInvokerContainer} from the given method.
-     *
-     * @param target method's calling object, if the method is static, it can be null
-     * @param methodInvoker method invoker
-     * @param mappingType mapping type
-     * @param namespace namespace, if null, use method name as namespace
-     * @param resultType result type
-     * @param resultKey result key
-     * @param duplicateStrategy duplicate strategy
-     * @return {@link MethodInvokerContainer}
-     */
-    public MethodInvokerContainer createContainer(
-        @Nullable Object target, MethodInvoker methodInvoker, MappingType mappingType,
-        @Nullable String namespace, Class<?> resultType, String resultKey, DuplicateStrategy duplicateStrategy) {
-        MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreation.builder()
-            .target(target)
-            .methodInvoker(methodInvoker)
-            .mappingType(mappingType)
-            .namespace(namespace)
-            .resultType(resultType)
-            .resultKey(resultKey)
-            .duplicateStrategy(duplicateStrategy)
-            .build();
-        return doCreateContainer(containerCreation);
-    }
-
-    private MethodInvokerContainer doCreateContainer(MethodInvokerContainerCreation containerCreation) {
+        MethodInvokerContainerCreation containerCreation) {
+        Object target = containerCreation.getTarget();
         Method method = containerCreation.getMethod();
         String namespace = getNamespace(method, containerCreation.getNamespace());
         MappingType mappingType = containerCreation.getMappingType();
-        MethodInvoker methodInvoker = containerCreation.getMethodInvoker();
-        Object target = containerCreation.getTarget();
+        MethodInvoker methodInvoker = Optional.ofNullable(containerCreation.getMethodInvoker())
+            .orElseGet(() -> adaptMethodToInvoker(target, method));
 
+        MethodInvokerContainer container = doCreateContainer(
+            containerCreation, mappingType, target, methodInvoker, method, namespace);
+
+        // https://github.com/opengoofy/crane4j/issues/266
+        String extractProperty = containerCreation.getOn();
+        if (StringUtils.isNotEmpty(extractProperty)) {
+            MethodInvoker extractor = (t, args) ->
+                propertyOperator.readProperty(t.getClass(), t, extractProperty);
+            container.setExtractor(extractor);
+        }
+
+        if (Objects.isNull(method)) {
+            log.info("create method invoker container [{}], mapping type is [{}]", container.getNamespace(), mappingType);
+        } else {
+            log.info("create method invoker container [{}] for method [{}], mapping type is [{}]", container.getNamespace(), method, mappingType);
+        }
+        return container;
+    }
+
+    private MethodInvokerContainer doCreateContainer(
+        MethodInvokerContainerCreation containerCreation, MappingType mappingType,
+        Object target, MethodInvoker methodInvoker, Method method, String namespace) {
         MethodInvokerContainer container;
         if (mappingType == MappingType.NO_MAPPING) {
             container = doCreateNoMappingContainer(target, methodInvoker, method, namespace);
@@ -112,25 +81,17 @@ public class MethodInvokerContainerCreator {
                 doCreateSingleKeyContainer(target, methodInvoker, namespace) :
                 doCreateOrderOfKeysContainer(target, methodInvoker, method, namespace);
         } else if (mappingType == MappingType.ONE_TO_ONE) {
-            container = doCreateOneToOneContainer(
-                target, methodInvoker, method, namespace,
+            container = doCreateOneToOneContainer(target, methodInvoker, method, namespace,
                 containerCreation.getResultType(), containerCreation.getResultKey(),
                 containerCreation.getDuplicateStrategy()
             );
         } else if (mappingType == MappingType.ONE_TO_MANY) {
-            container = doCreateOneToManyContainer(
-                target, methodInvoker, method, namespace,
+            container = doCreateOneToManyContainer(target, methodInvoker, method, namespace,
                 containerCreation.getResultType(), containerCreation.getResultKey(),
                 containerCreation.getDuplicateStrategy()
             );
         } else {
             throw new Crane4jException("unsupported mapping type: " + mappingType);
-        }
-
-        if (Objects.isNull(method)) {
-            log.debug("create method invoker container [{}], mapping type is [{}]", container.getNamespace(), mappingType);
-        } else {
-            log.debug("create method invoker container [{}] for method [{}], mapping type is [{}]", container.getNamespace(), method, mappingType);
         }
         return container;
     }
@@ -188,7 +149,7 @@ public class MethodInvokerContainerCreator {
      * otherwise invoke method on target object
      */
     @NonNull
-    protected MethodInvoker getMethodInvoker(Object target, Method method) {
+    protected MethodInvoker adaptMethodToInvoker(Object target, Method method) {
         MethodInvoker invoker = ReflectiveMethodInvoker.create(target, method, false);
         return ParameterConvertibleMethodInvoker.create(invoker, converterManager, method.getParameterTypes());
     }
@@ -255,7 +216,7 @@ public class MethodInvokerContainerCreator {
 
     @Getter
     @Builder
-    private static class MethodInvokerContainerCreation {
+    public static class MethodInvokerContainerCreation {
         @Nullable
         private final Object target;
         @Nullable
@@ -267,5 +228,7 @@ public class MethodInvokerContainerCreator {
         private final Class<?> resultType;
         private final String resultKey;
         private final DuplicateStrategy duplicateStrategy;
+        @Nullable
+        private final String on;
     }
 }

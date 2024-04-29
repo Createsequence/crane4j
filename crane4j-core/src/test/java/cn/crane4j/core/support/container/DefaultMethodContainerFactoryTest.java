@@ -11,6 +11,7 @@ import cn.crane4j.core.util.ReflectUtils;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +45,7 @@ public class DefaultMethodContainerFactoryTest {
     private Method noneResultMethod;
     private Method mappedMethod;
     private Method onoToOneMethod;
+    private Method wrappedOnoToOneMethod;
     private Method oneToManyMethod;
 
     @Before
@@ -66,6 +68,8 @@ public class DefaultMethodContainerFactoryTest {
         Assert.assertNotNull(onoToOneMethod);
         oneToManyMethod = ReflectUtils.getMethod(ServiceImpl.class, "oneToManyMethod", List.class);
         Assert.assertNotNull(oneToManyMethod);
+        wrappedOnoToOneMethod = ReflectUtils.getMethod(ServiceImpl.class, "wrappedOnoToOneMethod", List.class);
+        Assert.assertNotNull(wrappedOnoToOneMethod);
 
         @SuppressWarnings("unchecked")
         InvocationHandler handler = (t, m, args) -> {
@@ -79,6 +83,8 @@ public class DefaultMethodContainerFactoryTest {
                     return serviceImpl.mappedMethod((List<String>)args[0]);
                 case "onoToOneMethod":
                     return serviceImpl.onoToOneMethod((List<String>)args[0]);
+                case "wrappedOnoToOneMethod":
+                    return serviceImpl.wrappedOnoToOneMethod((List<String>)args[0]);
                 case "oneToManyMethod":
                     return serviceImpl.oneToManyMethod((List<String>)args[0]);
             }
@@ -191,6 +197,19 @@ public class DefaultMethodContainerFactoryTest {
         Assert.assertEquals(Arrays.asList(foo1, foo2), data.get(foo1.name));
     }
 
+    @Test
+    public void getWhenWrappedOnoToOneMethod() {
+        List<Container<Object>> containers = factory.get(serviceImpl, wrappedOnoToOneMethod, findAnnotations(wrappedOnoToOneMethod));
+        Assert.assertEquals(1, containers.size());
+        Container<Object> container = containers.get(0);
+        Assert.assertNotNull(container);
+
+        Assert.assertEquals("wrappedOnoToOneMethod", container.getNamespace());
+        Map<Object, ?> data = container.get(null);
+        Assert.assertEquals(foo1, data.get(foo1.id));
+        Assert.assertEquals(foo2, data.get(foo2.id));
+    }
+
     private static Collection<ContainerMethod> findAnnotations(Method method) {
         return Arrays.asList(method.getAnnotationsByType(ContainerMethod.class));
     }
@@ -222,11 +241,24 @@ public class DefaultMethodContainerFactoryTest {
         public Set<Foo> onoToOneMethod(List<String> args) {
             return Stream.of(foo1, foo2).collect(Collectors.toSet());
         }
+        @ContainerMethod(
+            namespace = "wrappedOnoToOneMethod", type = MappingType.ONE_TO_ONE,
+            resultType = Foo.class, on = "data"
+        )
+        public Result<Set<Foo>> wrappedOnoToOneMethod(List<String> args) {
+            return new Result<>(onoToOneMethod(args));
+        }
 
         @ContainerMethod(namespace = "oneToManyMethod", type = MappingType.ONE_TO_MANY, resultType = Foo.class, resultKey = "name")
         public List<Foo> oneToManyMethod(List<String> args) {
             return Arrays.asList(foo1, foo2);
         }
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    public static class Result<T> {
+        private final T data;
     }
 
     @AllArgsConstructor

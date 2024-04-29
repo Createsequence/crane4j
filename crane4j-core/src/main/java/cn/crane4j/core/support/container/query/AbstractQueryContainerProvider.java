@@ -166,12 +166,18 @@ public abstract class AbstractQueryContainerProvider<T> implements ContainerProv
     private MethodInvokerContainer doCreateContainer(
             String namespace, String keyProperty, Repository<T> repository, QueryInfo queryInfo, Set<String> queryColumns, String keyColumn) {
         MethodInvoker methodInvoker = createMethodInvoker(
-                namespace, repository, queryColumns, keyColumn, keyProperty
+            namespace, repository, queryColumns, keyColumn, keyProperty
         );
-        return methodInvokerContainerCreator.createContainer(
-            repository.getTarget(), methodInvoker, queryInfo.getMappingType(),
-            namespace, repository.getEntityType(), keyProperty, DuplicateStrategy.ALERT
-        );
+        MethodInvokerContainerCreator.MethodInvokerContainerCreation containerCreation = MethodInvokerContainerCreator.MethodInvokerContainerCreation.builder()
+            .target(repository.getTarget())
+            .methodInvoker(methodInvoker)
+            .mappingType(queryInfo.getMappingType())
+            .namespace(namespace)
+            .resultType(repository.getEntityType())
+            .resultKey(keyProperty)
+            .duplicateStrategy(DuplicateStrategy.ALERT)
+            .build();
+        return methodInvokerContainerCreator.createContainer(containerCreation);
     }
 
     /**

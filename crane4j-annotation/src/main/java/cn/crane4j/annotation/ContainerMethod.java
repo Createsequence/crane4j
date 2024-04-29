@@ -112,6 +112,32 @@ public @interface ContainerMethod {
     Class<?>[] bindMethodParamTypes() default {};
 
     /**
+     * <p>When the return value is a wrapper class,
+     * we can specify to obtain the dataset to be processed
+     * from the specific field of the wrapper class,
+     * and then use it to be data source of the container.
+     *
+     * <p>For example:
+     * <pre type="code">{@code
+     * // general response
+     * public static class Result<T> {
+     *     private Integer code;
+     *     private T data; // objects to be processed
+     * }
+     * // process general response
+     * @ContainerMethod(resultType = Foo.class, on = "data")
+     * public Result<List<Foo>> requestFoo() { // do something }
+     * }</pre>
+     * The return value of the method is<i>Result</i>, but the data is in <i>Result.data</i>,
+     * obtain data from specific fields for <i>on</i>.
+     *
+     * @return field name
+     * @since 2.8.0
+     * @see AutoOperate#on()
+     */
+    String on() default "";
+
+    /**
      * Batch operation.
      *
      * @author huangchengxing
