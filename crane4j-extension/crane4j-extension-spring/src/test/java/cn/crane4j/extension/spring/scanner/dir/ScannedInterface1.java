@@ -3,5 +3,5 @@ package cn.crane4j.extension.spring.scanner.dir;
 /**
  * @author huangchengxing
  */
-public class ScannedClass1 {
+public interface ScannedInterface1 {
 }

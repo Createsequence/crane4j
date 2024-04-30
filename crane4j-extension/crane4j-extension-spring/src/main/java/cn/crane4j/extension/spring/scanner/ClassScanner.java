@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 public class ClassScanner {
 
     public static final ClassScanner INSTANCE = new ClassScanner();
+    public static final String CLASSPATH = "classpath";
     public static final String CLASS_SUFFIX = ".class";
     public static final String ALL = "*";
     public static final String ALL_RECURSIVE = "**";
@@ -77,6 +78,10 @@ public class ClassScanner {
     }
 
     private String resolvePath(String path) {
+        // fix https://github.com/opengoofy/crane4j/issues/267
+        if (!path.startsWith(CLASSPATH)) {
+            path = CLASSPATH + "*:" + path;
+        }
         // it already specifies the path of the class
         if (path.endsWith(CLASS_SUFFIX)) {
             String pathNotWithClassSuffix = path.substring(0, path.length() - CLASS_SUFFIX.length());

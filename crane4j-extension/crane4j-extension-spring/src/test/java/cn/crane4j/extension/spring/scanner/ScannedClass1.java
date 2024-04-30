@@ -1,10 +1,10 @@
 package cn.crane4j.extension.spring.scanner;
 
-import cn.crane4j.annotation.ContainerEnum;
+import cn.crane4j.annotation.ContainerConstant;
 
 /**
  * @author huangchengxing
  */
-@ContainerEnum(namespace = "enum")
-public enum ScannedClass1 {
+@ContainerConstant(namespace = "constant1")
+public class ScannedClass1 {
 }
