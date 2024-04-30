@@ -6,6 +6,7 @@ import cn.crane4j.core.container.ContainerProvider;
 import cn.crane4j.core.container.Containers;
 import cn.crane4j.core.container.LambdaContainer;
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
+import cn.crane4j.core.exception.Crane4jException;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
 import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.ReflectiveDisassembleOperationHandler;
@@ -96,6 +97,8 @@ public class Crane4jApplicationContextTest {
         Assert.assertSame(container, context.getContainer("replaceContainer"));
 
         Container<?> container2 = LambdaContainer.forLambda("replaceContainer", ids -> Collections.emptyMap());
+        Assert.assertThrows(Crane4jException.class, () -> context.registerContainer(container2));
+        context.setAllowContainerOverriding(true);
         ContainerDefinition cd2 = context.registerContainer(container2);
         Assert.assertSame(container2, cd2.createContainer());
         Assert.assertNotSame(container, context.getContainer("replaceContainer"));

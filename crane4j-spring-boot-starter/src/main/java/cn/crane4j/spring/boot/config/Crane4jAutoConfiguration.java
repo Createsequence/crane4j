@@ -16,6 +16,7 @@ import cn.crane4j.core.condition.ConditionOnTargetTypeParser;
 import cn.crane4j.core.condition.ConditionParser;
 import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.container.Containers;
+import cn.crane4j.core.container.DefaultContainerManager;
 import cn.crane4j.core.container.lifecycle.ContainerInstanceLifecycleProcessor;
 import cn.crane4j.core.container.lifecycle.ContainerRegisterLogger;
 import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
@@ -189,8 +190,11 @@ public class Crane4jAutoConfiguration {
     @Primary
     @ConditionalOnMissingBean
     @Bean
-    public Crane4jApplicationContext crane4jApplicationContext(ApplicationContext applicationContext) {
-        return new Crane4jApplicationContext(applicationContext);
+    public Crane4jApplicationContext crane4jApplicationContext(
+        ApplicationContext applicationContext, Properties properties) {
+        Crane4jApplicationContext context = new Crane4jApplicationContext(applicationContext);
+        context.setAllowContainerOverriding(properties.isAllowContainerOverriding());
+        return context;
     }
 
     @ConditionalOnMissingBean
@@ -808,6 +812,14 @@ public class Crane4jAutoConfiguration {
          * @see BeanMethodContainerRegistrar
          */
         private boolean enableMethodContainer = true;
+
+        /**
+         * Whether allow container overriding.
+         *
+         * @since 2.8.0
+         * @see DefaultContainerManager#setAllowContainerOverriding
+         */
+        private boolean allowContainerOverriding = false;
 
         /**
          * Container cache configuration.

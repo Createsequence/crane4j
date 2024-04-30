@@ -1,6 +1,7 @@
 package cn.crane4j.core.container;
 
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
+import cn.crane4j.core.exception.Crane4jException;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,7 +17,7 @@ import java.util.Collections;
  */
 public class DefaultContainerManagerTest {
 
-    private ContainerManager containerManager;
+    private DefaultContainerManager containerManager;
 
     @Before
     public void init() {
@@ -67,6 +68,8 @@ public class DefaultContainerManagerTest {
         Assert.assertSame(container, containerManager.getContainer(definition.getNamespace()));
 
         // register container by factory method
+        Assert.assertThrows(Crane4jException.class, () -> containerManager.registerContainer("test", () -> container));
+        containerManager.setAllowContainerOverriding(true);
         definition = containerManager.registerContainer("test", () -> container);
         Assert.assertNotNull(definition);
         Assert.assertSame(container, definition.createContainer());

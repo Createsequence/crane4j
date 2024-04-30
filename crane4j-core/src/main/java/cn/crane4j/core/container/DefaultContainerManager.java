@@ -7,6 +7,7 @@ import cn.crane4j.core.util.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -43,6 +44,14 @@ public class DefaultContainerManager implements ContainerManager {
      * Registered container provider.
      */
     protected final Map<String, ContainerProvider> containerProviderMap = new LinkedHashMap<>();
+
+    /**
+     * Whether allow container overriding.
+     *
+     * @since 2.8.0
+     */
+    @Setter
+    private boolean allowContainerOverriding = false;
 
     // =============== lifecycle lifecycle  ===============
 
@@ -109,11 +118,16 @@ public class DefaultContainerManager implements ContainerManager {
     @Override
     public ContainerDefinition registerContainer(ContainerDefinition definition) {
         Asserts.isNotNull(definition, "definition must not null");
-        if (StringUtils.isEmpty(definition.getNamespace())) {
+        String namespace = definition.getNamespace();
+        if (StringUtils.isEmpty(namespace)) {
             // TODO add assertion to check namespace is not empty GtiHub#261
             log.warn("container namespace is empty, it will be ignored");
         }
-        Object key = getCacheKey(definition.getNamespace());
+        if (StringUtils.isNotEmpty(namespace) && containerMap.containsKey(namespace)) {
+            Asserts.isTrue(allowContainerOverriding, "The container [{}] has been registered, and the container overriding is not allowed.", namespace);
+            log.warn("The container [{}] already exists, it will be overridden", namespace);
+        }
+        Object key = getCacheKey(namespace);
         containerMap.compute(key, (k, t) -> {
             // process new definition
             ContainerDefinition newDefinition = ConfigurationUtil.triggerWhenRegistered(

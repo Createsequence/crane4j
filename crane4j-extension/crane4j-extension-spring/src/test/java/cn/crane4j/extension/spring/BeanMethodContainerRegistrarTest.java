@@ -62,6 +62,7 @@ public class BeanMethodContainerRegistrarTest {
 
     @Test
     public void testRegister() {
+        context.setAllowContainerOverriding(true);
         beanMethodContainerRegistrar.register(service, Service.class);
 
         // mappedMethod
