@@ -48,7 +48,9 @@ public class PropMappingExampleTest {
             source.put("age", 18 + i);
             sources.put(i, source);
         }
-        context.registerContainer(ImmutableMapContainer.forMap("student", sources));
+        if (!context.containsContainer("student")) {
+            context.registerContainer(ImmutableMapContainer.forMap("student", sources));
+        }
     }
 
     /**

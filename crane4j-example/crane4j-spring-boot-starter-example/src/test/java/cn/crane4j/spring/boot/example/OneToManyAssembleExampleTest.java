@@ -54,7 +54,9 @@ public class OneToManyAssembleExampleTest {
             });
             return result;
         });
-        configuration.registerContainer(container);
+        if (!configuration.containsContainer("customer-group")) {
+            configuration.registerContainer(container);
+        }
     }
 
     @Test
