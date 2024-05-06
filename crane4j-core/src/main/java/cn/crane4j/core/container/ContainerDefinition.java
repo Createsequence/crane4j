@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * @see ContainerLifecycleProcessor
  * @since 1.3.0
  */
-public interface ContainerDefinition {
+public interface  ContainerDefinition {
 
     /**
      * Create a simple container definition.

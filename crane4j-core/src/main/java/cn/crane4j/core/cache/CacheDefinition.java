@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author huangchengxing
  * @since 2.4.0
+ * @see Impl
  */
 public interface CacheDefinition {
 

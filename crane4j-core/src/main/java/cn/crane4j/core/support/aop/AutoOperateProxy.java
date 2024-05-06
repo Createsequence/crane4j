@@ -40,11 +40,15 @@ public class AutoOperateProxy {
     private final ProxyFactory proxyFactory;
 
     /**
-     * Wrap a target object if necessary.
+     * <p>Create a proxy instance for the target object
+     * if the target object has methods annotated with {@link AutoOperate}.<br/>
+     * When calling the annotated method of the target object,
+     * the method will be automatically filled with the necessary parameters or return values.
      *
      * @param target target object
      * @param <T> target type
-     * @return wrapped object
+     * @return proxy instance if it has method annotated with {@link AutoOperate},
+     * otherwise return the original target object.
      */
     public <T> T wrapIfNecessary(T target) {
         Class<?> proxyType = target.getClass();

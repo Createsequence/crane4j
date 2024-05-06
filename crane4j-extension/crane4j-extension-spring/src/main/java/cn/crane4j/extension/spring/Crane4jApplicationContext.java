@@ -38,6 +38,8 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.Order;
 
 import java.lang.reflect.AnnotatedElement;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -95,6 +97,11 @@ public class Crane4jApplicationContext extends DefaultContainerManager
      */
     @Delegate
     private final PropertyMappingStrategyManager propertyMappingStrategyManager = new SimplePropertyMappingStrategyManager();
+
+    /**
+     * cache manager map
+     */
+    private final Map<String, CacheManager> cacheManagerMap = new HashMap<>(8);
 
     /**
      * Get {@link ConverterManager}
@@ -242,7 +249,20 @@ public class Crane4jApplicationContext extends DefaultContainerManager
     @NonNull
     @Override
     public CacheManager getCacheManager(String name) {
-        return applicationContext.getBean(name, CacheManager.class);
+        return cacheManagerMap.getOrDefault(
+            name, applicationContext.getBean(name, CacheManager.class)
+        );
+    }
+
+    /**
+     * Register cache manager.
+     *
+     * @param cacheManager cache manager
+     * @since 2.8.0
+     */
+    @Override
+    public void registerCacheManager(CacheManager cacheManager) {
+        cacheManagerMap.put(cacheManager.getName(), cacheManager);
     }
 
     /**

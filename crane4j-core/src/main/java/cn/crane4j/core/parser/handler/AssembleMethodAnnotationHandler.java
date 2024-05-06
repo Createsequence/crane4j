@@ -99,6 +99,17 @@ public class AssembleMethodAnnotationHandler
     }
 
     /**
+     * Register {@link MethodContainerFactory} instance.
+     *
+     * @param methodContainerFactory method container factory
+     * @see ContainerMethodSupport#registerMethodContainerFactory
+     * @since 2.8.0
+     */
+    public void registerMethodContainerFactory(@NonNull MethodContainerFactory methodContainerFactory) {
+        containerMethodResolver.registerMethodContainerFactory(methodContainerFactory);
+    }
+
+    /**
      * Determine namespace by given annotation.
      *
      * @param standardAnnotation standard annotation

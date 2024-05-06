@@ -37,11 +37,13 @@ import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.ContainerAdapterRegister;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
+import cn.crane4j.core.support.Crane4jTemplate;
 import cn.crane4j.core.support.DefaultContainerAdapterRegister;
 import cn.crane4j.core.support.OperateTemplate;
 import cn.crane4j.core.support.ParameterNameFinder;
 import cn.crane4j.core.support.SimpleTypeResolver;
 import cn.crane4j.core.support.TypeResolver;
+import cn.crane4j.core.support.aop.AutoOperateProxy;
 import cn.crane4j.core.support.aop.MethodArgumentAutoOperateSupport;
 import cn.crane4j.core.support.aop.MethodResultAutoOperateSupport;
 import cn.crane4j.core.support.auto.AutoOperateAnnotatedElementResolver;
@@ -49,6 +51,7 @@ import cn.crane4j.core.support.auto.ClassBasedAutoOperateAnnotatedElementResolve
 import cn.crane4j.core.support.auto.ComposableAutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.auto.MethodBasedAutoOperateAnnotatedElementResolver;
 import cn.crane4j.core.support.container.CacheableMethodContainerFactory;
+import cn.crane4j.core.support.container.ContainerMethodAnnotationProcessor;
 import cn.crane4j.core.support.container.MethodContainerFactory;
 import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
 import cn.crane4j.core.support.converter.ConverterManager;
@@ -69,6 +72,7 @@ import cn.crane4j.core.support.reflect.PropertyOperator;
 import cn.crane4j.core.support.reflect.PropertyOperatorHolder;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
 import cn.crane4j.core.util.CollectionUtils;
+import cn.crane4j.core.util.ConfigurationUtil;
 import cn.crane4j.extension.spring.aop.MethodArgumentAutoOperateAdvisor;
 import cn.crane4j.extension.spring.aop.MethodResultAutoOperateAdvisor;
 import cn.crane4j.extension.spring.expression.SpelExpressionContext;
@@ -103,6 +107,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -199,6 +204,21 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
     @Bean
     public SpringCacheableContainerProcessor springCacheableContainerProcessor(Crane4jApplicationContext configuration) {
         return new SpringCacheableContainerProcessor(configuration);
+    }
+    @Bean
+    public Crane4jTemplate crane4jService(
+        Crane4jGlobalConfiguration configuration, AnnotationFinder annotationFinder, PropertyOperator propertyOperator,
+        OperateTemplate operateTemplate, OperatorProxyFactory operatorProxyFactory,
+        ContainerMethodAnnotationProcessor containerMethodAnnotationProcessor, @Nullable AutoOperateProxy autoOperateProxy) {
+        return Crane4jTemplate.builder()
+            .configuration(configuration)
+            .annotationFinder(annotationFinder)
+            .propertyOperator(propertyOperator)
+            .autoOperateProxy(Optional.ofNullable(autoOperateProxy).orElseGet(() -> ConfigurationUtil.createAutoOperateProxy(configuration)))
+            .operateTemplate(operateTemplate)
+            .operatorProxyFactory(operatorProxyFactory)
+            .containerMethodAnnotationProcessor(containerMethodAnnotationProcessor)
+            .build();
     }
 
     // ============== execute components ==============

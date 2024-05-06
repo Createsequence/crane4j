@@ -49,7 +49,7 @@ public abstract class AbstractContainerMethodSupport {
      * @param methodContainerFactory method container factory
      * @since 2.5.0
      */
-    public void registerMethodContainerFactory(MethodContainerFactory methodContainerFactory) {
+    public void registerMethodContainerFactory(@NonNull MethodContainerFactory methodContainerFactory) {
         if (!methodContainerFactories.contains(methodContainerFactory)) {
             this.methodContainerFactories.add(methodContainerFactory);
             this.methodContainerFactories.sort(Crane4jGlobalSorter.comparator());

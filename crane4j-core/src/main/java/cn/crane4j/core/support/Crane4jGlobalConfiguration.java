@@ -172,14 +172,23 @@ public interface Crane4jGlobalConfiguration
     }
 
     /**
-     * Get cache factory.
+     * Get cache manager.
      *
      * @param name cache factory name
      * @return cache factory
      * @throws IllegalArgumentException if name does not find cache factory
      * @since 2.4.0
      */
-    @NonNull CacheManager getCacheManager(String name);
+    @NonNull
+    CacheManager getCacheManager(String name);
+
+    /**
+     * Register cache manager.
+     *
+     * @param cacheManager cache manager
+     * @since 2.8.0
+     */
+    void registerCacheManager(CacheManager cacheManager);
 
     /**
      * Get key resolver.

@@ -11,6 +11,7 @@ import cn.crane4j.core.condition.ConditionOnTargetTypeParser;
 import cn.crane4j.core.container.ContainerProvider;
 import cn.crane4j.core.container.DefaultContainerManager;
 import cn.crane4j.core.container.lifecycle.ContainerRegisterLogger;
+import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
 import cn.crane4j.core.executor.OrderedBeanOperationExecutor;
@@ -60,6 +61,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Basic implementation of {@link Crane4jGlobalConfiguration}.
@@ -71,6 +75,7 @@ import java.util.Map;
 public class SimpleCrane4jGlobalConfiguration
     extends DefaultContainerManager implements Crane4jGlobalConfiguration {
 
+    private final AnnotationFinder annotationFinder;
     @Setter
     private TypeResolver typeResolver;
     @Setter
@@ -229,6 +234,17 @@ public class SimpleCrane4jGlobalConfiguration
     }
 
     /**
+     * Register cache manager.
+     *
+     * @param cacheManager cache manager
+     * @since 2.8.0
+     */
+    @Override
+    public void registerCacheManager(CacheManager cacheManager) {
+        cacheManagerMap.put(cacheManager.getName(), cacheManager);
+    }
+
+    /**
      * Builder for {@link SimpleCrane4jGlobalConfiguration}.
      *
      * @author huangchengxing
@@ -252,7 +268,7 @@ public class SimpleCrane4jGlobalConfiguration
                 propertyOperator = new ChainAccessiblePropertyOperator(propertyOperator);
                 propertyOperator = new PropertyOperatorHolder(propertyOperator);
             }
-            SimpleCrane4jGlobalConfiguration configuration = new SimpleCrane4jGlobalConfiguration(typeResolver, propertyOperator, converterManager);
+            SimpleCrane4jGlobalConfiguration configuration = new SimpleCrane4jGlobalConfiguration(annotationFinder, typeResolver, propertyOperator, converterManager);
             initDefaultContainerComponents(configuration);
             initDefaultParserComponents(configuration);
             initDefaultExecutorComponents(configuration);
@@ -322,6 +338,17 @@ public class SimpleCrane4jGlobalConfiguration
             configuration.getBeanOperationExecutorMap().put(disorderedBeanOperationExecutor.getName(), disorderedBeanOperationExecutor);
             OrderedBeanOperationExecutor orderedBeanOperationExecutor = new OrderedBeanOperationExecutor(configuration, Crane4jGlobalSorter.comparator());
             configuration.getBeanOperationExecutorMap().put(orderedBeanOperationExecutor.getName(), orderedBeanOperationExecutor);
+
+            // create default thread pool executor for async executor
+            int corePoolSize = Runtime.getRuntime().availableProcessors();
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                corePoolSize * 2, corePoolSize * 2,
+                10L, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(1), new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            executor.allowCoreThreadTimeOut(true);
+            AsyncBeanOperationExecutor asyncBeanOperationExecutor = new AsyncBeanOperationExecutor(configuration, executor);
+            configuration.getBeanOperationExecutorMap().put(asyncBeanOperationExecutor.getName(), asyncBeanOperationExecutor);
 
             // property mapping strategy
             configuration.addPropertyMappingStrategy(OverwriteMappingStrategy.INSTANCE);

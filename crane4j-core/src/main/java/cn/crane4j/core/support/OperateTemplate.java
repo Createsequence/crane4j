@@ -15,6 +15,7 @@ import java.util.function.Predicate;
  * Helper classes used to simplify filling operations.
  *
  * @author huangchengxing
+ * @see Crane4jTemplate
  */
 @RequiredArgsConstructor
 public class OperateTemplate {
@@ -22,7 +23,7 @@ public class OperateTemplate {
     /**
      * Default configuration parser will be used when no parser is specified.
      */
-    private final BeanOperationParser defaultParser;
+    protected final BeanOperationParser defaultParser;
 
     /**
      * Default operation actuator, which will be used when no actuator is specified.
