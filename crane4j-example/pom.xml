@@ -11,6 +11,7 @@
     <modules>
         <module>crane4j-spring-boot-starter-example</module>
         <module>crane4j-mybatis-plus-extension-example</module>
+        <module>crane4j-benchmark</module>
     </modules>
 
     <modelVersion>4.0.0</modelVersion>
