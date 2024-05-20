@@ -29,17 +29,7 @@
 </dependency>
 ~~~
 
-然后在启动类上添加 `@EnableCrane4j` 或单独添加 `@EnableCrane4jJacksonExtension` 注解即可：
-
-~~~java
-@EnableCrane4j
-@SpringBootApplication
-public class MbossChargeApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(MbossChargeApplication.class, args);
-    }
-}
-~~~
+此后当项目启动时，将会自动加载相关的组件。
 
 ## 2.启用插件
 

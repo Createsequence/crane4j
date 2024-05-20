@@ -48,22 +48,9 @@
 </dependency>
 ~~~
 
-## 2.启用配置
-
-如果你使用的是 2.4.0 及更高版本，那么你不需要做任何额外的配置来引入 crane4j，crane4j 将借助 SpringBoot 的自动装配自动加载必要的组件。
-
-如果你使用的是 2.4.0 以下的版本，那么你需要在**启动类**或者**配置类**上，添加 `@EnableCrane4j` 注解或这 `@EnableCrane4jFramework` 注解来引入自动配置：
-
-~~~java
-@EnableCrane4j
-@Configuration
-public class Crane4jConfiguration {
-}
-~~~
-
 项目启动后，`crane4j` 相关组件将会注册到 Spring 上下文中。
 
-## 3.配置数据源
+## 2.配置数据源
 
 在开始填充对象之前，你需要提前准备好一些数据源，并将其注册到全局配置对象中。这里我们可以基于一个 `Map` 集合创建数据源容器，并将其注册到全局配置中：
 
@@ -87,7 +74,7 @@ crane4jTemplate.opsForContainer()
 
 :::
 
-## 4.配置填充操作
+## 3.配置填充操作
 
 接着，我们在需要填充的类属性上添加注解：
 
@@ -104,11 +91,11 @@ public static class Foo {
 
 该配置表示，根据 id 值从容器中获取对应的数据源，并将其填充到 name 属性上。
 
-## 5.触发填充
+## 4.触发填充
 
 与非 Spring 环境不同，在 Spring 环境中，你可以选择手动填充或自动填充：
 
-### 5.1.手动填充
+### 4.1.手动填充
 
 ~~~java
 // 使用操作门面手动执行填充
@@ -118,7 +105,7 @@ System.out.println(foos);
 // [Foo(id=1, name="a"), Foo(id=2, name="b"), Foo(id=3, name="c")]
 ~~~
 
-### 5.2.自动填充
+### 4.2.自动填充
 
 ~~~java
 // 在方法上添加注解，表明需要自动填充其方法返回值
@@ -139,10 +126,9 @@ List<Foo> foos = service.getFoos();
 System.out.println(foos);
 ~~~
 
-## 6.完整代码
+## 5.完整代码
 
 ~~~java
-@EnableCrane4j // 启用配置
 @Configuration
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {QuickStartWithSpringBootTest.Service.class})

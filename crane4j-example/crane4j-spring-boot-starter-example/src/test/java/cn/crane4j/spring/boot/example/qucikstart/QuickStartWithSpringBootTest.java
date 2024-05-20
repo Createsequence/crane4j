@@ -3,34 +3,29 @@ package cn.crane4j.spring.boot.example.qucikstart;
 import cn.crane4j.annotation.Assemble;
 import cn.crane4j.annotation.AutoOperate;
 import cn.crane4j.annotation.Mapping;
-import cn.crane4j.core.container.Container;
-import cn.crane4j.core.container.Containers;
-import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.Crane4jTemplate;
-import cn.crane4j.core.support.OperateTemplate;
-import cn.crane4j.spring.boot.annotation.EnableCrane4j;
 import cn.hutool.core.map.MapBuilder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author huangchengxing
  */
-@EnableCrane4j
 @Configuration
 @RunWith(SpringRunner.class)
+@EnableAutoConfiguration
 @SpringBootTest(classes = {QuickStartWithSpringBootTest.Service.class})
 public class QuickStartWithSpringBootTest {
 
