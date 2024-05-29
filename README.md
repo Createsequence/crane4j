@@ -1,4 +1,4 @@
-[English](https://github.com/opengoofy/crane4j/blob/dev/README-EN.md) | [中文](https://github.com/opengoofy/crane4j/blob/dev/README.md)
+[//]: # ([English]&#40;https://github.com/opengoofy/crane4j/blob/dev/README-EN.md&#41; | [中文]&#40;https://github.com/opengoofy/crane4j/blob/dev/README.md&#41;)
 
 <img src="https://user-images.githubusercontent.com/49221670/221162632-95465432-f2df-4286-a53a-af59d70b1958.png" alt="image-20230220150040070" style="zoom: 80%;" />
 
