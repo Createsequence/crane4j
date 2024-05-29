@@ -523,7 +523,6 @@ public class Crane4jAutoConfiguration {
         return new DisorderedBeanOperationExecutor(containerManager);
     }
 
-
     @SuppressWarnings("all")
     @ConditionalOnMissingBean
     @Bean
@@ -724,6 +723,22 @@ public class Crane4jAutoConfiguration {
     public MethodArgumentAutoOperateAdvisor methodArgumentAutoOperateAdvisor(
         ObjectProvider<MethodArgumentAutoOperateSupport> methodArgumentAutoOperateSupport) {
         return new MethodArgumentAutoOperateAdvisor(methodArgumentAutoOperateSupport);
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public ProxyFactory proxyFactory() {
+        return DefaultProxyFactory.INSTANCE;
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public AutoOperateProxy autoOperateProxy(
+        MethodArgumentAutoOperateSupport methodArgumentAutoOperateSupport, MethodResultAutoOperateSupport methodResultAutoOperateSupport,
+        AnnotationFinder annotationFinder, ProxyFactory proxyFactory) {
+        return new AutoOperateProxy(
+            methodArgumentAutoOperateSupport, methodResultAutoOperateSupport, annotationFinder, proxyFactory
+        );
     }
 
     // endregion
