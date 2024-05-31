@@ -5,6 +5,7 @@ import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.ParameterNameFinder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -166,7 +167,8 @@ public class ReflectUtils {
      * @param type type
      * @return method list
      */
-    public static Method[] getDeclaredMethods(Class<?> type) {
+    public static Method[] getDeclaredMethods(@NonNull Class<?> type) {
+        Asserts.isNotNull(type, "type must not be null");
         return CollectionUtils.computeIfAbsent(DECLARED_METHOD_CACHE, type, k -> type.getDeclaredMethods());
     }
 
@@ -191,7 +193,8 @@ public class ReflectUtils {
      * @return method list
      * @see Class#getMethods()
      */
-    public static Method[] getMethods(Class<?> type) {
+    public static Method[] getMethods(@NonNull Class<?> type) {
+        Asserts.isNotNull(type, "type must not be null");
         return CollectionUtils.computeIfAbsent(METHOD_CACHE, type, curr -> {
             List<Method> methods = new ArrayList<>();
             traverseTypeHierarchy(curr, t -> methods.addAll(Arrays.asList(getDeclaredMethods(t))));
