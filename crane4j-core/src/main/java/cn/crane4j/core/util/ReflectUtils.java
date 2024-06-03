@@ -67,11 +67,6 @@ public class ReflectUtils {
      */
     private static final Map<Class<?>, Method[]> METHOD_CACHE = CollectionUtils.newWeakConcurrentMap();
 
-    /**
-     * declared super class with interface
-     */
-    private static final Map<Class<?>, Set<Class<?>>> DECLARED_SUPER_CLASS_WITH_INTERFACE = CollectionUtils.newWeakConcurrentMap();
-
     // ====================== method ======================
 
     /**
@@ -195,9 +190,14 @@ public class ReflectUtils {
      */
     public static Method[] getMethods(@NonNull Class<?> type) {
         Asserts.isNotNull(type, "type must not be null");
-        return CollectionUtils.computeIfAbsent(METHOD_CACHE, type, curr -> {
+        return CollectionUtils.computeIfAbsent(METHOD_CACHE, type, t -> {
             List<Method> methods = new ArrayList<>();
-            traverseTypeHierarchy(curr, t -> methods.addAll(Arrays.asList(getDeclaredMethods(t))));
+            traverseTypeHierarchy(t, curr -> {
+                Method[] currMethods = getDeclaredMethods(curr);
+                if (ArrayUtils.isNotEmpty(currMethods)) {
+                    methods.addAll(Arrays.asList(currMethods));
+                }
+            });
             return methods.toArray(new Method[0]);
         });
     }
@@ -414,15 +414,13 @@ public class ReflectUtils {
      * @return declared super class with interface
      */
     public static Set<Class<?>> getDeclaredSuperClassWithInterface(Class<?> type) {
-        return CollectionUtils.computeIfAbsent(DECLARED_SUPER_CLASS_WITH_INTERFACE, type, k -> {
-            Set<Class<?>> result = new LinkedHashSet<>();
-            Class<?> superClass = type.getSuperclass();
-            if (superClass != null) {
-                result.add(superClass);
-            }
-            result.addAll(Arrays.asList(type.getInterfaces()));
-            return result;
-        });
+        Set<Class<?>> result = new LinkedHashSet<>();
+        Class<?> superClass = type.getSuperclass();
+        if (superClass != null) {
+            result.add(superClass);
+        }
+        result.addAll(Arrays.asList(type.getInterfaces()));
+        return result;
     }
 
     /**
@@ -499,7 +497,12 @@ public class ReflectUtils {
     public static Field[] getFields(Class<?> type) {
         return CollectionUtils.computeIfAbsent(FIELD_CACHE, type, t -> {
             List<Field> fields = new ArrayList<>();
-            traverseTypeHierarchy(t, curr -> fields.addAll(Arrays.asList(getDeclaredFields(curr))));
+            traverseTypeHierarchy(t, curr -> {
+                Field[] currFields = getDeclaredFields(curr);
+                if (ArrayUtils.isNotEmpty(currFields)) {
+                    fields.addAll(Arrays.asList(currFields));
+                }
+            });
             return fields.toArray(new Field[0]);
         });
     }
