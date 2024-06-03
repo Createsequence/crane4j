@@ -27,13 +27,13 @@ public class AutoOperateProxyTest {
     @Before
     public void init() {
         SimpleCrane4jGlobalConfiguration configuration = SimpleCrane4jGlobalConfiguration.create();
-        configuration.registerContainer(Containers.<String>forLambda(
+        configuration.registerContainer(Containers.<Integer>forLambda(
             "test", ids -> ids.stream().map(id -> {
                 Map<String, Object> r = new HashMap<>();
                 r.put("id", id);
                 r.put("name", "name" + id);
                 return r;
-            }).collect(Collectors.toMap(r -> (String)r.get("id"), Function.identity()))
+            }).collect(Collectors.toMap(r -> (Integer)r.get("id"), Function.identity()))
         ));
         autoOperateProxy = ConfigurationUtil.createAutoOperateProxy(configuration);
     }
