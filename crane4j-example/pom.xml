@@ -50,6 +50,11 @@
                 <artifactId>crane4j-extension-jackson</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.crane4j</groupId>
+                <artifactId>crane4j-extension-query</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.baomidou</groupId>

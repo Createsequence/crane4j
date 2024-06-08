@@ -61,6 +61,14 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- query extension -->
+        <dependency>
+            <groupId>cn.crane4j</groupId>
+            <artifactId>crane4j-extension-query</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!--test-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
