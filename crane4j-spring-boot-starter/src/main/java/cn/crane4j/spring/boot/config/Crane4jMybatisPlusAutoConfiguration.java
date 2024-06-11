@@ -1,18 +1,19 @@
 package cn.crane4j.spring.boot.config;
 
 import cn.crane4j.core.container.MethodInvokerContainer;
-import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategyManager;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
 import cn.crane4j.extension.mybatis.plus.AssembleMpAnnotationHandler;
-import cn.crane4j.extension.mybatis.plus.MybatisPlusQueryContainerProvider;
+import cn.crane4j.extension.query.AbstractQueryAssembleAnnotationHandler;
+import cn.crane4j.extension.query.QueryDefinition;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -40,26 +41,16 @@ import java.util.function.BiPredicate;
 @AutoConfiguration(after = { MybatisPlusAutoConfiguration.class, Crane4jAutoConfiguration.class })
 public class Crane4jMybatisPlusAutoConfiguration {
 
-    @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusQueryContainerProvider mybatisPlusQueryContainerProvider(
-        MethodInvokerContainerCreator methodInvokerContainerCreator,
-        Crane4jGlobalConfiguration globalConfiguration, ApplicationContext applicationContext) {
-        return new MybatisPlusQueryContainerProvider(
-            methodInvokerContainerCreator, globalConfiguration,
-            mapperName -> applicationContext.getBean(mapperName, BaseMapper.class)
-        );
-    }
-
     @Bean
-    @ConditionalOnMissingBean
-    public AssembleMpAnnotationHandler assembleMpAnnotationResolver(
-        AnnotationFinder annotationFinder, MybatisPlusQueryContainerProvider mybatisPlusQueryContainerProvider,
-        Crane4jGlobalConfiguration globalConfiguration,
-        PropertyMappingStrategyManager propertyMappingStrategyManager) {
-        return new AssembleMpAnnotationHandler(
-            annotationFinder, mybatisPlusQueryContainerProvider, globalConfiguration, propertyMappingStrategyManager
+    public AssembleMpAnnotationHandler assembleMpAnnotationHandler(
+        AnnotationFinder annotationFinder, Crane4jGlobalConfiguration globalConfiguration,
+        MethodInvokerContainerCreator methodInvokerContainerCreator, BeanFactory beanFactory) {
+        AssembleMpAnnotationHandler handler = new AssembleMpAnnotationHandler(
+            annotationFinder, globalConfiguration, methodInvokerContainerCreator
         );
+        handler.setRepositoryTargetProvider(new MapperLazyLoader(beanFactory));
+        return handler;
     }
 
     @ConditionalOnProperty(
@@ -107,6 +98,29 @@ public class Crane4jMybatisPlusAutoConfiguration {
     }
 
     /**
+     * Mapper lazy loader.
+     *
+     * @author huangchengxing
+     * @since 2.9.0
+     */
+    @RequiredArgsConstructor
+    public static class MapperLazyLoader implements AbstractQueryAssembleAnnotationHandler.RepositoryTargetProvider<BaseMapper<?>> {
+
+        private final BeanFactory beanFactory;
+
+        /**
+         * Get repository by given id.
+         *
+         * @param queryDefinition query definition
+         * @return repository
+         */
+        @Override
+        public BaseMapper<?> get(QueryDefinition queryDefinition) {
+            return beanFactory.getBean(BaseMapper.class, queryDefinition.getRepositoryId());
+        }
+    }
+
+    /**
      * Auto registrar of container based on {@link BaseMapper}.
      *
      * @author huangchengxing
@@ -138,10 +152,10 @@ public class Crane4jMybatisPlusAutoConfiguration {
             BiPredicate<String, BaseMapper<?>> mapperFilter = includes.isEmpty() ?
                 (n, m) -> !excludes.contains(n) : (n, m) -> includes.contains(n) && !excludes.contains(n);
             Map<String, BaseMapper> mappers = applicationContext.getBeansOfType(BaseMapper.class);
-            MybatisPlusQueryContainerProvider register = applicationContext.getBean(MybatisPlusQueryContainerProvider.class);
+            AssembleMpAnnotationHandler handler = applicationContext.getBean(AssembleMpAnnotationHandler.class);
             mappers.entrySet().stream()
                 .filter(e -> mapperFilter.test(e.getKey(), e.getValue()))
-                .forEach(e -> register.registerRepository(e.getKey(), e.getValue()));
+                .forEach(e -> handler.registerRepository(e.getKey(), e.getValue()));
             log.info("crane4j mybatis-plus extension component initialization completed.");
         }
     }

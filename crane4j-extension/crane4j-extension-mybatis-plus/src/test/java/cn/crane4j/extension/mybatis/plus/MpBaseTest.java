@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author huangchengxing
@@ -49,14 +50,9 @@ public abstract class MpBaseTest {
     @SneakyThrows
     @Before
     public void init() {
-        MybatisConfiguration configuration = new MybatisConfiguration();
-        configuration.addMapper(FooMapper.class);
-        configuration.setLogImpl(Slf4jImpl.class);
-
-        GlobalConfig globalConfig = new GlobalConfig();
-        globalConfig.setSqlInjector(new DefaultSqlInjector());
-        globalConfig.setSuperMapperClass(BaseMapper.class);
-        GlobalConfigUtils.setGlobalConfig(configuration, globalConfig);
+        if (Objects.nonNull(fooMapper)) {
+            return;
+        }
 
         // init data source and environment
         Map<String, String> properties = new HashMap<>();
@@ -65,7 +61,6 @@ public abstract class MpBaseTest {
         properties.put("password", "crane4j-test");
         properties.put("driverClassName", "org.h2.Driver");
         DataSource dataSource = DruidDataSourceFactory.createDataSource(properties);
-        configuration.setEnvironment(new Environment("test", new JdbcTransactionFactory(), dataSource));
 
         // init schema and data
         @Cleanup
@@ -75,7 +70,17 @@ public abstract class MpBaseTest {
         statement.execute(schema);
         statement.execute(data);
 
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        configuration.addMapper(FooMapper.class);
+        configuration.setLogImpl(Slf4jImpl.class);
+
+        GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setSqlInjector(new DefaultSqlInjector());
+        globalConfig.setSuperMapperClass(BaseMapper.class);
+        GlobalConfigUtils.setGlobalConfig(configuration, globalConfig);
+
         // create mapper proxy
+        configuration.setEnvironment(new Environment("test", new JdbcTransactionFactory(), dataSource));
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
         sqlSession = sqlSessionFactory.openSession();
         fooMapper = sqlSession.getMapper(FooMapper.class);

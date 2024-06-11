@@ -97,7 +97,7 @@ public class AssembleDbAnnotationHandlerTest extends DataSourceTestSupport {
         // check operation
         AssembleOperation fieldLevelOperation = CollectionUtils.get(assembleOperations, 1);
         Assert.assertNotNull(fieldLevelOperation);
-        Assert.assertEquals("id", fieldLevelOperation.getKey());
+        Assert.assertEquals("name", fieldLevelOperation.getKey());
         Assert.assertEquals(3, fieldLevelOperation.getPropertyMappings().size());
 
         // check container
@@ -136,12 +136,12 @@ public class AssembleDbAnnotationHandlerTest extends DataSourceTestSupport {
     @Data
     @RequiredArgsConstructor
     public static class Foo {
+        private final Integer id;
         @AssembleDb(
             sort = 2,
             selectColumns = "id, age", fromTable = "foo", whereColumn = "name",
             prop = {"name", "age", "sex"}
         )
-        private final Integer id;
         private String name;
         private Integer age;
         private Integer sex;

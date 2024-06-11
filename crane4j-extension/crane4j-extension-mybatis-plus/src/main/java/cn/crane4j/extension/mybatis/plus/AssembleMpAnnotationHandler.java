@@ -1,91 +1,117 @@
 package cn.crane4j.extension.mybatis.plus;
 
 import cn.crane4j.annotation.AssembleMp;
-import cn.crane4j.annotation.MappingType;
-import cn.crane4j.core.container.Container;
-import cn.crane4j.core.container.ContainerManager;
+import cn.crane4j.core.exception.Crane4jException;
 import cn.crane4j.core.parser.BeanOperations;
-import cn.crane4j.core.parser.handler.AbstractStandardAssembleAnnotationHandler;
-import cn.crane4j.core.parser.handler.OperationAnnotationHandler;
-import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategyManager;
-import cn.crane4j.core.parser.operation.AssembleOperation;
-import cn.crane4j.core.parser.operation.KeyTriggerOperation;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.Crane4jGlobalSorter;
-import lombok.experimental.Accessors;
+import cn.crane4j.core.support.MethodInvoker;
+import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
+import cn.crane4j.core.util.Asserts;
+import cn.crane4j.core.util.CollectionUtils;
+import cn.crane4j.core.util.StringUtils;
+import cn.crane4j.extension.query.AbstractQueryAssembleAnnotationHandler;
+import cn.crane4j.extension.query.QueryDefinition;
+import cn.crane4j.extension.query.QueryRepository;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.lang.reflect.AnnotatedElement;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * <p>The implementation of {@link OperationAnnotationHandler}.<br />
- * It's used to scan the {@link AssembleMp} annotations on classes and their attributes,
- * And generate {@link AssembleOperation} for it using {@link MybatisPlusQueryContainerProvider.Query} as the data source container.
+ * Annotation handler for {@link AssembleMp}.
  *
  * @author huangchengxing
- * @see AssembleMp
- * @see MybatisPlusQueryContainerProvider
- * @since 1.2.0
+ * @since 2.9.0
  */
-@Accessors(chain = true)
-public class AssembleMpAnnotationHandler extends AbstractStandardAssembleAnnotationHandler<AssembleMp> {
+@Setter
+public class AssembleMpAnnotationHandler
+    extends AbstractQueryAssembleAnnotationHandler<AssembleMp, BaseMapper<?>> {
 
-    private static final String QUERY_CONTAINER_PROVIDER_NAME = "MybatisQueryContainerProvider";
-    private final MybatisPlusQueryContainerProvider containerRegister;
+    private static final String[] EMPTY_SELECT_COLUMNS = new String[0];
+    private DataSourceSwitcher dataSourceSwitcher = DataSourceSwitcher.DO_NOTING;
 
     /**
-     * Create a {@link AssembleMpAnnotationHandler} instance.
+     * Create an {@link AssembleMpAnnotationHandler} instance.
      *
      * @param annotationFinder annotation finder
-     * @param containerRegister mybatis plus query container register
      * @param globalConfiguration global configuration
-     * @param propertyMappingStrategyManager property mapping strategy manager
+     * @param methodInvokerContainerCreator method invoker container creator
      */
     public AssembleMpAnnotationHandler(
-        AnnotationFinder annotationFinder,
-        MybatisPlusQueryContainerProvider containerRegister,
-        Crane4jGlobalConfiguration globalConfiguration,
-        PropertyMappingStrategyManager propertyMappingStrategyManager) {
-        this(annotationFinder, Crane4jGlobalSorter.comparator(), containerRegister, globalConfiguration, propertyMappingStrategyManager);
+        AnnotationFinder annotationFinder, Crane4jGlobalConfiguration globalConfiguration,
+        MethodInvokerContainerCreator methodInvokerContainerCreator) {
+        super(AssembleMp.class, annotationFinder, Crane4jGlobalSorter.comparator(),
+            globalConfiguration, globalConfiguration, methodInvokerContainerCreator
+        );
     }
 
     /**
-     * Create a {@link AssembleMpAnnotationHandler} instance.
+     * Create a method invoker for query.
      *
-     * @param annotationFinder annotation finder
-     * @param operationComparator operation comparator
-     * @param containerRegister mybatis plus query container register
-     * @param globalConfiguration global configuration
-     * @param propertyMappingStrategyManager property mapping strategy manager
+     * @param annotation      annotation
+     * @param repository      repository
+     * @param selectColumns   select columns
+     * @param conditionColumn condition column
+     * @return method invoker
      */
-    public AssembleMpAnnotationHandler(
-        AnnotationFinder annotationFinder, Comparator<KeyTriggerOperation> operationComparator,
-        MybatisPlusQueryContainerProvider containerRegister,
-        Crane4jGlobalConfiguration globalConfiguration,
-        PropertyMappingStrategyManager propertyMappingStrategyManager) {
-        super(AssembleMp.class, annotationFinder, operationComparator, globalConfiguration, propertyMappingStrategyManager);
-        this.containerRegister = containerRegister;
-        globalConfiguration.registerContainerProvider(QUERY_CONTAINER_PROVIDER_NAME, containerRegister);
+    @SuppressWarnings("unchecked")
+    @Override
+    protected @NonNull MethodInvoker createMethodInvoker(
+        OrmAssembleAnnotation<AssembleMp> annotation, QueryRepository<BaseMapper<?>> repository,
+        Set<String> selectColumns, String conditionColumn) {
+        if (CollectionUtils.isNotEmpty(selectColumns)) {
+            selectColumns.add(conditionColumn);
+        }
+
+        // replace to select sql, e.g.: name -> name AS userName
+        BaseMapperQueryRepository repo = (BaseMapperQueryRepository) repository;
+        selectColumns = selectColumns.stream()
+            .map(c -> resolveSelectColumn(c, repo))
+            .collect(Collectors.toSet());
+
+        MethodInvoker query = MapperQuery.builder()
+            .baseMapper((BaseMapper<Object>)repository.getTarget())
+            .conditionColumn(conditionColumn)
+            .selectColumns(CollectionUtils.isEmpty(selectColumns) ? EMPTY_SELECT_COLUMNS : selectColumns.toArray(new String[0]))
+            .build();
+        String datasource = annotation.getQueryDefinition().getDatasource();
+        return StringUtils.isEmpty(datasource) ? query : new DataSourceSwitchedMapperQuery(query, datasource);
+    }
+
+    private String resolveSelectColumn(String column, BaseMapperQueryRepository repo) {
+        TableFieldInfo fieldInfo = repo.getColumnToFieldInfoMap().get(column);
+        return Objects.isNull(fieldInfo) ? column : fieldInfo.getSqlSelect();
     }
 
     /**
-     * Get container from given {@code annotation}.
+     * Register repository.
      *
-     * @param standardAnnotation standard annotation
-     * @return namespace of {@link Container}
+     * @param id id
+     * @param repository repository
+     * @return old repository target
      */
     @Override
-    protected String getContainerNamespace(StandardAssembleAnnotation<AssembleMp> standardAnnotation) {
-        AssembleMp annotation = standardAnnotation.getAnnotation();
-        String namespace = containerRegister.determineNamespace(
-            annotation.mapper(), annotation.where(), Arrays.asList(annotation.selects())
-        );
-        if (annotation.mappingType() != MappingType.ONE_TO_ONE) {
-            containerRegister.setMappingType(namespace, annotation.mappingType());
-        }
-        return ContainerManager.canonicalNamespace(namespace, QUERY_CONTAINER_PROVIDER_NAME);
+    public BaseMapper<?> registerRepository(String id, @NonNull BaseMapper<?> repository)  {
+        Asserts.isNotNull(repository, "repository cannot be null");
+        BaseMapperQueryRepository ormRepository = new BaseMapperQueryRepository(id, repository);
+        return Optional.ofNullable(ormRepositoryMap.put(id, ormRepository))
+            .map(QueryRepository::getTarget)
+            .orElse(null);
     }
 
     /**
@@ -97,9 +123,15 @@ public class AssembleMpAnnotationHandler extends AbstractStandardAssembleAnnotat
      * @return {@link StandardAssembleAnnotation} instance
      */
     @Override
-    protected StandardAssembleAnnotation<AssembleMp> getStandardAnnotation(
+    protected OrmAssembleAnnotation<AssembleMp> getStandardAnnotation(
         BeanOperations beanOperations, AnnotatedElement element, AssembleMp annotation) {
-        return StandardAssembleAnnotationAdapter.<AssembleMp>builder()
+        QueryDefinition queryDefinition = new QueryDefinition.Impl(
+            annotation.datasource(), annotation.mappingType(), annotation.mapper(),
+            CollectionUtils.newCollection(HashSet::new, annotation.selects()), annotation.where(),
+            annotation.duplicateStrategy()
+        );
+        return OrmAssembleAnnotation.<AssembleMp>builder()
+            .queryDefinition(queryDefinition)
             .annotatedElement(element)
             .annotation(annotation)
             .id(annotation.id())
@@ -116,5 +148,77 @@ public class AssembleMpAnnotationHandler extends AbstractStandardAssembleAnnotat
             .prop(annotation.prop())
             .propertyMappingStrategy(annotation.propertyMappingStrategy())
             .build();
+    }
+
+    /**
+     * An interface for switching data source.
+     *
+     * @author huangchengxing
+     */
+    public interface DataSourceSwitcher {
+
+        DataSourceSwitcher DO_NOTING = new DataSourceSwitcher() {
+            @Override
+            public void beforeInvoke(String dataSource) {
+                // do nothing
+            }
+            @Override
+            public void afterInvoke(String dataSource) {
+                // do nothing
+            }
+        };
+
+        /**
+         * Do something before invoke.
+         *
+         * @param dataSource data source name
+         */
+        void beforeInvoke(String dataSource);
+
+        /**
+         * Do something after invoke.
+         *
+         * @param dataSource data source name
+         */
+        void afterInvoke(String dataSource);
+    }
+
+    @RequiredArgsConstructor
+    private class DataSourceSwitchedMapperQuery implements MethodInvoker {
+        private final MethodInvoker delegate;
+        private final String datasource;
+        @Override
+        public Object invoke(Object target, Object... args) {
+            dataSourceSwitcher.beforeInvoke(datasource);
+            try {
+                return delegate.invoke(target, args);
+            } catch (Exception e) {
+                throw Crane4jException.wrapIfNecessary(e);
+            } finally {
+                dataSourceSwitcher.afterInvoke(datasource);
+            }
+        }
+    }
+
+    @Builder
+    @RequiredArgsConstructor
+    private static class MapperQuery<T> implements MethodInvoker {
+        private final BaseMapper<T> baseMapper;
+        @NonNull
+        private final String[] selectColumns;
+        private final String conditionColumn;
+        @Override
+        public Object invoke(Object target, Object... args) {
+            Collection<?> keys = CollectionUtils.adaptObjectToCollection(args[0]);
+            return keys.isEmpty() ?
+                Collections.emptyList() : baseMapper.selectList(getQueryWrapper(keys));
+        }
+        private QueryWrapper<T> getQueryWrapper(Collection<?> keys) {
+            QueryWrapper<T> wrapper = Wrappers.<T>query().in(conditionColumn, keys);
+            if (selectColumns.length > 0) {
+                wrapper.select(selectColumns);
+            }
+            return wrapper;
+        }
     }
 }

@@ -22,6 +22,13 @@ import java.lang.annotation.Target;
 public @interface AssembleMp {
 
     /**
+     * The data source to be used.
+     *
+     * @return data source
+     */
+    String datasource() default "";
+
+    /**
      * Bean name of mapper interface.
      *
      * @return bean name
@@ -50,11 +57,12 @@ public @interface AssembleMp {
     MappingType mappingType() default MappingType.ONE_TO_ONE;
 
     /**
-     * The data source to be used.
+     * The strategy for handling duplicate keys.
      *
-     * @return data source
+     * @return strategy
+     * @since 2.9.0
      */
-    String datasource() default "";
+    DuplicateStrategy duplicateStrategy() default DuplicateStrategy.ALERT;
 
     // ================= common =================
 

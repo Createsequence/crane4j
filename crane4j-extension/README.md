@@ -10,6 +10,6 @@
 
 ### crane4j-extension-mybatis-plus
 
-用于将 mybatis-plus 集成至 crane4j，可以基于 mp 提供快速查询单表作为数据源的功能，
+该模块依赖 `crane4j-extension-query` 模块实现，用于将 mybatis-plus 集成至 crane4j，可以基于 mp 提供快速查询单表作为数据源的功能。
 
 使用前需要先引入 `mybatis-plus-core` 依赖。

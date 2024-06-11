@@ -10,6 +10,17 @@ import cn.crane4j.core.util.StringUtils;
 public class Crane4jException extends RuntimeException {
 
     /**
+     * Wrap the specified exception if necessary.
+     *
+     * @param cause the cause
+     * @return cause if it is a runtime exception, otherwise a new Crane4jException
+     */
+    public static RuntimeException wrapIfNecessary(Throwable cause) {
+        return cause instanceof RuntimeException ?
+            (RuntimeException)cause : new Crane4jException(cause);
+    }
+
+    /**
      * Constructs a new runtime exception with the specified detail message.
      * The cause is not initialized, and may subsequently be initialized by a
      * call to {@link #initCause}.

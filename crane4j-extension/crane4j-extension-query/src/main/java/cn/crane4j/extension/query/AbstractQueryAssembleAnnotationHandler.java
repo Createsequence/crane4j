@@ -21,7 +21,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -102,14 +106,11 @@ public abstract class AbstractQueryAssembleAnnotationHandler<A extends Annotatio
             .map(repository::resolveToColumn)
             .collect(Collectors.toSet());
 
-        // determine condition column
+        // determine condition column, e.g.: userId -> id, name -> name
         String conditionColumn = StringUtils.emptyToDefault(
             queryDefinition.getConditionColumn(), repository.getPrimaryKeyProperty()
         );
         conditionColumn = repository.resolveToColumn(conditionColumn);
-        // make sure that the condition column always is included in the select columns,
-        // because the condition column will be used to group the result.
-        selectColumns.add(conditionColumn);
 
         // create invoker
         return createMethodInvoker(annotation, repository, selectColumns, conditionColumn);
@@ -127,16 +128,17 @@ public abstract class AbstractQueryAssembleAnnotationHandler<A extends Annotatio
      */
     @NonNull
     protected abstract MethodInvoker createMethodInvoker(
-        OrmAssembleAnnotation<A> annotation, QueryRepository<R> repository, Set<String> selectColumns, String conditionColumn);
+        OrmAssembleAnnotation<A> annotation, QueryRepository<R> repository, @Nullable Set<String> selectColumns, String conditionColumn);
 
     /**
      * Register repository.
      *
      * @param id id
      * @param repository repository
+     * @return old repository target
      * @see #ormRepositoryMap
      */
-    public abstract void registerRepository(String id, @NonNull R repository);
+    public abstract R registerRepository(String id, @NonNull R repository);
 
     /**
      * Get repository by given annotation.

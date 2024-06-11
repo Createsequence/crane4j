@@ -18,8 +18,20 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -66,12 +78,19 @@ public class AssembleDbAnnotationHandler
     @Override
     protected MethodInvoker createMethodInvoker(
         OrmAssembleAnnotation<AssembleDb> annotation, QueryRepository<QueryDefinition> repository,
-        Set<String> selectColumns, String conditionColumn) {
+        @Nullable Set<String> selectColumns, String conditionColumn) {
         String sql = "select {} from {} where {} in (?)";
-        boolean isSelectAll = CollectionUtils.isEmpty(selectColumns)
-            || (selectColumns.size() == 1 && selectColumns.contains(conditionColumn));
+
+        String select;
+        if (CollectionUtils.isEmpty(selectColumns)) {
+            select = "*";
+        } else {
+            selectColumns.add(conditionColumn);
+            select = String.join(", ", selectColumns);
+        }
+
         sql = CharSequenceUtil.format(sql,
-            isSelectAll ? "*" : String.join(", ", selectColumns),
+            select,
             annotation.getQueryDefinition().getRepositoryId(),
             conditionColumn
         );
@@ -152,8 +171,6 @@ public class AssembleDbAnnotationHandler
         }
     }
 
-    // ========== unsupported methods ==========
-
     @Override
     public void setRepositoryTargetProvider(
         @Nullable RepositoryTargetProvider<QueryDefinition> repositoryTargetProvider)
@@ -162,9 +179,11 @@ public class AssembleDbAnnotationHandler
     }
 
     @Override
-    public void registerRepository(String id, @NonNull QueryDefinition queryDefinition) {
+    public QueryDefinition registerRepository(String id, @NonNull QueryDefinition queryDefinition) {
         Asserts.isNotEmpty(queryDefinition.getConditionColumn(), "condition column cannot be empty!");
-        ormRepositoryMap.put(id, new DataSourceRepository(queryDefinition));
+        return Optional.ofNullable(ormRepositoryMap.put(id, new DataSourceRepository(queryDefinition)))
+            .map(QueryRepository::getTarget)
+            .orElse(null);
     }
 
     @SuppressWarnings("java:S6548")

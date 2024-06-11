@@ -3,9 +3,8 @@ package cn.crane4j.spring.boot.config.mp;
 import cn.crane4j.core.parser.BeanOperationParser;
 import cn.crane4j.core.parser.TypeHierarchyBeanOperationParser;
 import cn.crane4j.core.parser.handler.OperationAnnotationHandler;
-import cn.crane4j.core.support.container.query.AbstractQueryContainerProvider;
 import cn.crane4j.core.util.ReflectUtils;
-import cn.crane4j.extension.mybatis.plus.MybatisPlusQueryContainerProvider;
+import cn.crane4j.extension.mybatis.plus.AssembleMpAnnotationHandler;
 import cn.crane4j.spring.boot.config.Crane4jAutoConfiguration;
 import cn.crane4j.spring.boot.config.Crane4jMybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -20,7 +19,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * test for {@link Crane4jMybatisPlusAutoConfiguration.BaseMapperAutoRegistrar}
@@ -34,7 +32,7 @@ import java.util.Map;
 public class BaseMapperAutoRegistrarTest {
 
     @Autowired
-    private MybatisPlusQueryContainerProvider containerRegister;
+    private AssembleMpAnnotationHandler assembleMpAnnotationHandler;
     @Autowired
     private BeanOperationParser beanOperationParser;
     @Autowired
@@ -43,12 +41,10 @@ public class BaseMapperAutoRegistrarTest {
     @Test
     public void test() {
         if (beanOperationParser instanceof TypeHierarchyBeanOperationParser) {
-            List<OperationAnnotationHandler> resolvers = ReflectUtils.getFieldValue(beanOperationParser, "operationAnnotationHandlers");
-            Assert.assertEquals(resolvers.size(), applicationContext.getBeanNamesForType(OperationAnnotationHandler.class).length);
+            List<OperationAnnotationHandler> handlers = ReflectUtils.getFieldValue(beanOperationParser, "operationAnnotationHandlers");
+            Assert.assertEquals(handlers.size(), applicationContext.getBeanNamesForType(OperationAnnotationHandler.class).length);
         }
-
-        Map<String, AbstractQueryContainerProvider.Repository<BaseMapper<?>>> mapperInfoMap = containerRegister.getRegisteredRepositories();
-        Assert.assertEquals(1, mapperInfoMap.size());
-        Assert.assertTrue(mapperInfoMap.containsKey("fooMapper"));
+        BaseMapper<?> mapper = assembleMpAnnotationHandler.registerRepository("fooMapper", applicationContext.getBean("fooMapper", BaseMapper.class));
+        Assert.assertSame(mapper, applicationContext.getBean("fooMapper"));
     }
 }
