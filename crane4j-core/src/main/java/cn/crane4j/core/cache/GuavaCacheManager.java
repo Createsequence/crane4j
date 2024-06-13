@@ -65,7 +65,7 @@ public class GuavaCacheManager extends AbstractCacheManager {
         /**
          * Get the cache instance.
          *
-         * @param expireTime expire time
+         * @param expireTime expire time, if less than 0, the cache will not expire
          * @param timeUnit  time unit
          * @return guava cache instance
          */
@@ -86,21 +86,24 @@ public class GuavaCacheManager extends AbstractCacheManager {
         /**
          * Get the cache instance.
          *
-         * @param expireTime expire time
+         * @param expireTime expire time, if less than 0, the cache will not expire
          * @param timeUnit   time unit
          * @return guava cache instance
          */
         @Override
         public Cache<Object, Object> getCache(Long expireTime, TimeUnit timeUnit) {
             Asserts.isNotEquals(expireTime, 0L, "Expire time must not be 0");
-            if (expireTime > 1) {
+            if (expireTime > 0) {
                 return CacheBuilder.newBuilder()
                     .expireAfterWrite(expireTime, timeUnit)
                     .build();
             }
-            // if expire time less than 0, use weak keys and weak values
+            // if expire time less than 0, use and weak values
+            // it will expire by the jvm gc
             return CacheBuilder.newBuilder()
-                .weakKeys().weakValues()
+                // fix https://github.com/opengoofy/crane4j/issues/305
+                //.weakKeys()
+                .weakValues()
                 .build();
         }
     }
