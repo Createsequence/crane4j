@@ -59,7 +59,14 @@ public class CacheableContainer<K> implements ContainerDelegate<K> {
 
         // some keys are cached?
         keys = keys.stream()
-            .filter(k -> !caches.containsKey(k)).collect(Collectors.toSet());
+            .filter(k -> !caches.containsKey(k))
+            .collect(Collectors.toSet());
+        // fix https://github.com/opengoofy/crane4j/issues/304
+        if (keys.isEmpty()) {
+            return caches;
+        }
+
+        // get none cached keys from container
         if (log.isDebugEnabled()) {
             log.debug("get none cached keys [{}] from container [{}]", keys, container.getNamespace());
         }
