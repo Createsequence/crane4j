@@ -44,7 +44,7 @@
 
     <properties>
         <!--revision-->
-        <revision>2.8.1</revision>
+        <revision>2.8.2</revision>
         <!--build-->
         <java.version>1.8</java.version>
         <server.id>ossrh-token</server.id>
@@ -63,7 +63,6 @@
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-        <nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
         <skip.maven.gpg.plugin>false</skip.maven.gpg.plugin>
         <skip.jacoco.plugin>true</skip.jacoco.plugin>
     </properties>
@@ -218,19 +217,6 @@
                     <skip>${skip.maven.gpg.plugin}</skip>
                 </configuration>
             </plugin>
-
-            <!-- sonatype -->
-<!--            <plugin>-->
-<!--                <groupId>org.sonatype.plugins</groupId>-->
-<!--                <artifactId>nexus-staging-maven-plugin</artifactId>-->
-<!--                <version>${nexus-staging-maven-plugin.version}</version>-->
-<!--                <extensions>true</extensions>-->
-<!--                <configuration>-->
-<!--                    <serverId>ossrh</serverId>-->
-<!--                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>-->
-<!--                    <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
 
             <!-- 测试覆盖率 -->
             <plugin>
