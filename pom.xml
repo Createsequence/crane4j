@@ -47,7 +47,8 @@
         <revision>2.8.1</revision>
         <!--build-->
         <java.version>1.8</java.version>
-        <server.id>maven-central</server.id>
+        <server.id>ossrh-token</server.id>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--dependents-->
         <hutool.version>5.8.26</hutool.version>
         <guava.version>33.0.0-jre</guava.version>
@@ -58,11 +59,12 @@
         <jmh.version>1.32</jmh.version>
         <!--plugins-->
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <maven-javadoc-plugin>3.2.0</maven-javadoc-plugin>
-        <maven-source-plugin>3.2.1</maven-source-plugin>
-        <maven-compiler-plugin>3.8.0</maven-compiler-plugin>
-        <maven-gpg-plugin>1.6</maven-gpg-plugin>
-        <skip.maven.gpg.plugin>true</skip.maven.gpg.plugin>
+        <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
+        <skip.maven.gpg.plugin>false</skip.maven.gpg.plugin>
         <skip.jacoco.plugin>true</skip.jacoco.plugin>
     </properties>
 
@@ -162,11 +164,27 @@
 
     <build>
         <plugins>
-            <!-- 生成javadoc -->
+
+            <!-- source -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- doc -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${maven-javadoc-plugin}</version>
+                <version>${maven-javadoc-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -182,50 +200,37 @@
                 </configuration>
             </plugin>
 
-            <!-- 打包resources -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven-source-plugin}</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- 编译 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin}</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <showWarnings>true</showWarnings>
-                </configuration>
-            </plugin>
-
-            <!-- gpg认证 -->
+            <!-- gpg -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>${maven-gpg-plugin}</version>
-                <configuration>
-                    <skip>${skip.maven.gpg.plugin}</skip>
-                </configuration>
+                <version>${maven-gpg-plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>sign-artifacts</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>sign</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <skip>${skip.maven.gpg.plugin}</skip>
+                </configuration>
             </plugin>
+
+            <!-- sonatype -->
+<!--            <plugin>-->
+<!--                <groupId>org.sonatype.plugins</groupId>-->
+<!--                <artifactId>nexus-staging-maven-plugin</artifactId>-->
+<!--                <version>${nexus-staging-maven-plugin.version}</version>-->
+<!--                <extensions>true</extensions>-->
+<!--                <configuration>-->
+<!--                    <serverId>ossrh</serverId>-->
+<!--                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>-->
+<!--                    <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
 
             <!-- 测试覆盖率 -->
             <plugin>
@@ -251,6 +256,7 @@
                 </executions>
             </plugin>
 
+            <!-- 版本号占位符处理 -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
