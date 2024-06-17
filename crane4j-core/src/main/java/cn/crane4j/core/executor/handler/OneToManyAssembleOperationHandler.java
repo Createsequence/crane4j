@@ -58,6 +58,7 @@ public class OneToManyAssembleOperationHandler extends OneToOneAssembleOperation
                     .collect(Collectors.toList()) : sources;
             Object origin = target.getOrigin();
             propertyMappingStrategy.doMapping(
+                target.getExecution().getOperation(),
                 origin, source, sourceValues, mapping,
                 sv -> propertyOperator.writeProperty(origin.getClass(), origin, mapping.getReference(), sourceValues)
             );

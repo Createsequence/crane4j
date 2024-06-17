@@ -134,18 +134,18 @@ public class OneToOneAssembleOperationHandler extends AbstractAssembleOperationH
         AssembleOperation operation = execution.getOperation();
         PropertyMappingStrategy propertyMappingStrategy = operation.getPropertyMappingStrategy();
         Set<PropertyMapping> mappings = operation.getPropertyMappings();
-        doCompleteMapping(source, target.getOrigin(), mappings, propertyMappingStrategy);
+        doCompleteMapping(operation, source, target.getOrigin(), mappings, propertyMappingStrategy);
     }
 
     private void doCompleteMapping(
-        Object source, Object target, Set<PropertyMapping> mappings, PropertyMappingStrategy propertyMappingStrategy) {
+        AssembleOperation operation, Object source, Object target, Set<PropertyMapping> mappings, PropertyMappingStrategy propertyMappingStrategy) {
         PropDesc sourceDesc = propertyOperator.getPropertyDescriptor(source.getClass());
         PropDesc targetDesc = propertyOperator.getPropertyDescriptor(target.getClass());
         for (PropertyMapping mapping : mappings) {
             Object sourceValue = mapping.hasSource() ?
                 sourceDesc.readProperty(source, mapping.getSource()) : source;
             propertyMappingStrategy.doMapping(
-                target, source, sourceValue, mapping,
+                operation, target, source, sourceValue, mapping,
                 sv -> targetDesc.writeProperty(target, mapping.getReference(), sourceValue)
             );
         }

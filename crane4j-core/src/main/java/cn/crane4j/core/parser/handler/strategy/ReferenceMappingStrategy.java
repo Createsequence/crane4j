@@ -1,6 +1,7 @@
 package cn.crane4j.core.parser.handler.strategy;
 
 import cn.crane4j.core.parser.PropertyMapping;
+import cn.crane4j.core.parser.operation.AssembleOperation;
 import cn.crane4j.core.support.reflect.PropertyOperator;
 import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -18,22 +19,12 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class ReferenceMappingStrategy implements PropertyMappingStrategy {
 
-    public static final String NAME = ReferenceMappingStrategy.class.getSimpleName();
     private final PropertyOperator propertyOperator;
-
-    /**
-     * Get strategy name.
-     *
-     * @return name
-     */
-    @Override
-    public String getName() {
-        return NAME;
-    }
 
     /**
      * Map {@code sourceValue} to reference fields in target.
      *
+     * @param operation assemble operation
      * @param target          target object
      * @param source          source object
      * @param sourceValue     source value
@@ -42,6 +33,7 @@ public class ReferenceMappingStrategy implements PropertyMappingStrategy {
      */
     @Override
     public void doMapping(
+        AssembleOperation operation,
         Object target, Object source, @Nullable Object sourceValue,
         PropertyMapping propertyMapping, Consumer<Object> mapping) {
         Object referencePropertyValue = propertyOperator.readProperty(target.getClass(), target, propertyMapping.getReference());

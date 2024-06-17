@@ -151,7 +151,7 @@ public class Foo {
         container = "foo",
         keyDesc = "|", // 指定使用 “|” 作为分隔符
         keyType = Integer.class, // 指定将分割出的每个 key 都转为 Integer 类型
-        props = @Mapping("name")
+        props = @Mapping(ref = "teachers")
     )
     private String teacherIds;
     private List<Teacher> teachers;
@@ -159,3 +159,23 @@ public class Foo {
 ~~~
 
 具体可参见 [声明装配操作](./declare_assemble_operation.md) 中 “键的解析策略” 一节。
+
+### 3.3.拼接字符串
+
+考虑到不少用户反映在这种场景下会有拼接字符串后再填充的需求，因此在 2.9.0 及以上版本新增了一个策略，你可以用它实现类似的效果：
+
+~~~java
+@Data
+public class Foo {
+  
+    @Assemble(
+        container = "foo", props = @Mapping(src = "name", ref = "teacherNames"),
+        keyDesc = ",", // 指定使用 “,” 作为分隔符
+      	propertyMappingStrategy = PropertyMappingStrategy.Coll_JOIN_AS_STRING // 将得到的 name 根据分隔符拼接为字符串
+    )
+    private String teacherIds; // "1, 2, 3"
+    private String teacherNames; // "name1,name2,name3"
+}
+~~~
+
+在上述配置中，当进行填充时，name 集合将会被拼接位字符串再进行填充，字符串的分隔符与上文 `keyDesc` 指定的分隔符一致（默认为 `,`）。

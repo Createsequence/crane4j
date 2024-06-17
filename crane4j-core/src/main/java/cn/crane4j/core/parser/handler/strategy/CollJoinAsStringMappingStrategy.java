@@ -2,19 +2,24 @@ package cn.crane4j.core.parser.handler.strategy;
 
 import cn.crane4j.core.parser.PropertyMapping;
 import cn.crane4j.core.parser.operation.AssembleOperation;
+import cn.crane4j.core.util.StringUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
- * Enforce overwriting the original value of the referenced field regardless of whether the referenced source value is null or not.
+ * Join as string mapping strategy.
  *
  * @author huangchengxing
- * @since 2.1.0
+ * @see AssembleOperation#getKeyDescription()
+ * @since 2.9.0
  */
-public class OverwriteMappingStrategy implements PropertyMappingStrategy {
+public class CollJoinAsStringMappingStrategy implements PropertyMappingStrategy {
 
-    public static final OverwriteMappingStrategy INSTANCE = new OverwriteMappingStrategy();
+    public static final CollJoinAsStringMappingStrategy INSTANCE = new CollJoinAsStringMappingStrategy();
+    private static final String DEFAULT_DELIMITER = ",";
 
     /**
      * Map {@code sourceValue} to reference fields in target.
@@ -31,6 +36,12 @@ public class OverwriteMappingStrategy implements PropertyMappingStrategy {
         AssembleOperation operation,
         Object target, Object source, @Nullable Object sourceValue,
         PropertyMapping propertyMapping, Consumer<Object> mapping) {
+        if (sourceValue instanceof Collection) {
+            String delimiter = StringUtils.emptyToDefault(operation.getKeyDescription(), DEFAULT_DELIMITER);
+            sourceValue = ((Collection<?>)sourceValue).stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(delimiter));
+        }
         mapping.accept(sourceValue);
     }
 }

@@ -282,7 +282,7 @@ public class Foo {
 public class Foo {
     @Assemble(
         container = "foo", props = @Mapping(src = "a", ref = "b"),
-        propertyMappingStrategy = "ReferenceMappingStrategy" // 指定属性映射策略
+        propertyMappingStrategy = PropertyMappingStrategy.REFERENCE // 指定属性映射策略
     )
     private String id;
     private String b;
@@ -298,6 +298,8 @@ public class Foo {
 	当不指定策略时，将默认使用它作为实际的映射策略；
 
 + `ReferenceMappingStrategy`：空值引用策略，仅当 `ref` 对应的目标属性为 `null` 时，才获取 `src` 的属性值；
+
+在 2.9.0 及以上版本，默认内置策略的名称皆已被声明为 `PropertyMappingStrategy` 接口中的常量，你可以直接通过常量来引用策略。
 
 ### 4.2.自定义策略
 

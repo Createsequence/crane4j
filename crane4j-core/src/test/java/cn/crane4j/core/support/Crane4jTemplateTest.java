@@ -247,7 +247,7 @@ public abstract class Crane4jTemplateTest {
 
             Assert.assertSame(ops, ops.registerContainerLifecycleProcessor(new ContainerLifecycleProcessor() { }));
             Assert.assertSame(ops, ops.registerOperationAnnotationHandler((parser, beanOperations) -> { }));
-            Assert.assertSame(ops, ops.registerPropertyMappingStrategy((target, source, sourceValue, propertyMapping, mapping) -> { }));
+            Assert.assertSame(ops, ops.registerPropertyMappingStrategy((operation, target, source, sourceValue, propertyMapping, mapping) -> { }));
         }
 
         @Test

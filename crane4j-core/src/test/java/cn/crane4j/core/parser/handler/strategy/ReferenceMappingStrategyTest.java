@@ -2,6 +2,7 @@ package cn.crane4j.core.parser.handler.strategy;
 
 import cn.crane4j.core.parser.PropertyMapping;
 import cn.crane4j.core.parser.SimplePropertyMapping;
+import cn.crane4j.core.parser.operation.SimpleAssembleOperation;
 import cn.crane4j.core.support.reflect.PropertyOperator;
 import cn.crane4j.core.support.reflect.ReflectivePropertyOperator;
 import lombok.AllArgsConstructor;
@@ -25,12 +26,14 @@ public class ReferenceMappingStrategyTest {
         Foo target = new Foo();
         PropertyMapping mapping = new SimplePropertyMapping("name", "name");
         strategy.doMapping(
+            SimpleAssembleOperation.builder().build(),
             target, source, source.getName(), mapping, t -> target.setName((String)t)
         );
         Assert.assertEquals(source.getName(), target.getName());
 
         source.setName("test2");
         strategy.doMapping(
+            SimpleAssembleOperation.builder().build(),
             target, source, source.getName(), mapping, t -> target.setName((String)t)
         );
         Assert.assertNotEquals(source.getName(), target.getName());

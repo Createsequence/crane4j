@@ -27,6 +27,7 @@ import cn.crane4j.core.parser.handler.AssembleEnumAnnotationHandler;
 import cn.crane4j.core.parser.handler.AssembleKeyAnnotationHandler;
 import cn.crane4j.core.parser.handler.DisassembleAnnotationHandler;
 import cn.crane4j.core.parser.handler.OperationAnnotationHandler;
+import cn.crane4j.core.parser.handler.strategy.CollJoinAsStringMappingStrategy;
 import cn.crane4j.core.parser.handler.strategy.OverwriteMappingStrategy;
 import cn.crane4j.core.parser.handler.strategy.OverwriteNotNullMappingStrategy;
 import cn.crane4j.core.parser.handler.strategy.PropertyMappingStrategy;
@@ -228,6 +229,11 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         SimplePropertyMappingStrategyManager manager = new SimplePropertyMappingStrategyManager();
         propertyMappingStrategies.forEach(manager::addPropertyMappingStrategy);
         return manager;
+    }
+
+    @Bean
+    public CollJoinAsStringMappingStrategy joinAsStringMappingStrategy() {
+        return CollJoinAsStringMappingStrategy.INSTANCE;
     }
 
     @Bean
