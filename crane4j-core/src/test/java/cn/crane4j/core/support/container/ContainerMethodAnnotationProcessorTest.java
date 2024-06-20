@@ -5,7 +5,6 @@ import cn.crane4j.annotation.ContainerMethod;
 import cn.crane4j.annotation.MappingType;
 import cn.crane4j.core.cache.CacheableContainer;
 import cn.crane4j.core.container.Container;
-import cn.crane4j.core.container.MethodInvokerContainer;
 import cn.crane4j.core.exception.Crane4jException;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
@@ -64,12 +63,12 @@ public class ContainerMethodAnnotationProcessorTest {
 
         // mappedMethod
         Container<?> mappedMethod = containerMap.get("mappedMethod");
-        Assert.assertTrue(mappedMethod instanceof MethodInvokerContainer);
+        Assert.assertNotNull(mappedMethod);
         Assert.assertEquals("mappedMethod", mappedMethod.getNamespace());
 
         // onoToOneMethod
         Container<?> onoToOneMethod = containerMap.get("onoToOneMethod");
-        Assert.assertTrue(onoToOneMethod instanceof MethodInvokerContainer);
+        Assert.assertNotNull(onoToOneMethod);
         Assert.assertEquals("onoToOneMethod", onoToOneMethod.getNamespace());
 
         // oneToManyMethod

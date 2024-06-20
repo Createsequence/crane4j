@@ -224,32 +224,46 @@ public class DefaultMethodContainerFactoryTest {
 
     private class ServiceImpl implements Service {
 
-        @ContainerMethod(namespace = "noneMappedMethod", type = MappingType.ORDER_OF_KEYS)
+        @ContainerMethod(namespace = "noneMappedMethod", type = MappingType.ORDER_OF_KEYS, filterNullKey = false, skipQueryIfKeyCollIsEmpty = false)
         public String orderOfKeysMethod(String arg) {
             return arg;
         }
 
-        @ContainerMethod(namespace = "noneResultMethod", type = MappingType.NO_MAPPING, resultType = Foo.class)
+        @ContainerMethod(
+            namespace = "noneResultMethod", type = MappingType.NO_MAPPING, resultType = Foo.class,
+            filterNullKey = false, skipQueryIfKeyCollIsEmpty = false
+        )
         public void noneResultMethod() { }
 
-        @ContainerMethod(namespace = "mappedMethod", type = MappingType.NO_MAPPING, resultType = Foo.class)
+        @ContainerMethod(
+            namespace = "mappedMethod", type = MappingType.NO_MAPPING, resultType = Foo.class,
+            filterNullKey = false, skipQueryIfKeyCollIsEmpty = false
+        )
         public Map<String, Foo> mappedMethod(List<String> args) {
             return Stream.of(foo1, foo2).collect(Collectors.toMap(Foo::getId, Function.identity()));
         }
 
-        @ContainerMethod(namespace = "onoToOneMethod", type = MappingType.ONE_TO_ONE, resultType = Foo.class)
+        @ContainerMethod(
+            namespace = "onoToOneMethod", type = MappingType.ONE_TO_ONE, resultType = Foo.class,
+            filterNullKey = false, skipQueryIfKeyCollIsEmpty = false
+        )
         public Set<Foo> onoToOneMethod(List<String> args) {
             return Stream.of(foo1, foo2).collect(Collectors.toSet());
         }
         @ContainerMethod(
             namespace = "wrappedOnoToOneMethod", type = MappingType.ONE_TO_ONE,
+            filterNullKey = false, skipQueryIfKeyCollIsEmpty = false,
             resultType = Foo.class, on = "data"
         )
         public Result<Set<Foo>> wrappedOnoToOneMethod(List<String> args) {
             return new Result<>(onoToOneMethod(args));
         }
 
-        @ContainerMethod(namespace = "oneToManyMethod", type = MappingType.ONE_TO_MANY, resultType = Foo.class, resultKey = "name")
+        @ContainerMethod(
+            namespace = "oneToManyMethod", type = MappingType.ONE_TO_MANY,
+            filterNullKey = false, skipQueryIfKeyCollIsEmpty = false,
+            resultType = Foo.class, resultKey = "name"
+        )
         public List<Foo> oneToManyMethod(List<String> args) {
             return Arrays.asList(foo1, foo2);
         }

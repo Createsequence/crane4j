@@ -2,6 +2,7 @@ package cn.crane4j.core.support.container;
 
 import cn.crane4j.annotation.ContainerMethod;
 import cn.crane4j.core.container.Container;
+import cn.crane4j.core.container.FilterableKeyContainer;
 import cn.crane4j.core.container.MethodInvokerContainer;
 import cn.crane4j.core.support.AnnotationFinder;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,22 @@ public class DefaultMethodContainerFactory implements MethodContainerFactory {
             .duplicateStrategy(annotation.duplicateStrategy())
             .on(annotation.on())
             .build();
-        return methodInvokerContainerCreator.createContainer(containerCreation);
+        Container<Object> container = methodInvokerContainerCreator.createContainer(containerCreation);
+        return wrapIfNecessary(container, method, annotation);
+    }
+
+    private Container<Object> wrapIfNecessary(Container<Object> container, Method method, ContainerMethod annotation) {
+        if (!annotation.filterNullKey() || !annotation.skipQueryIfKeyCollIsEmpty()) {
+            return container;
+        }
+        FilterableKeyContainer<Object> wrapper = new FilterableKeyContainer<>(container);
+        wrapper.setFilterNullKey(annotation.filterNullKey());
+        wrapper.setSkipQueryIfKeyCollIsEmpty(annotation.skipQueryIfKeyCollIsEmpty());
+        if (annotation.skipQueryIfKeyCollIsEmpty() && method.getParameterCount() == 0) {
+            log.warn("The container method [{}] has no parameters, "
+                + "but it is set skipQueryIfKeyCollIsEmpty= true, "
+                + "Therefore, the method will never be called. Is this correct?", method);
+        }
+        return wrapper;
     }
 }

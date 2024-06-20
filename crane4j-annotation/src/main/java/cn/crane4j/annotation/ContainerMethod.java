@@ -138,6 +138,22 @@ public @interface ContainerMethod {
     String on() default "";
 
     /**
+     * <p>Whether to filter null keys.
+     *
+     * @return boolean
+     * @since 2.9.0
+     */
+     boolean filterNullKey() default true;
+
+    /**
+     * <p>Whether to ignore an execution if the param is empty.
+     *
+     * @return boolean
+     * @since 2.9.0
+     */
+     boolean skipQueryIfKeyCollIsEmpty() default true;
+
+    /**
      * Batch operation.
      *
      * @author huangchengxing
