@@ -21,11 +21,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
- * test for {@link AbstractBeanOperationExecutor}
+ * test for {@link AbstractFlatDisassembleBeanOperationExecutor}
  *
  * @author huangchengxing
  */
-public class AbstractBeanOperationExecutorTest extends BaseExecutorTest {
+public class AbstractAbstractFlatDisassembleBeanOperationExecutorTest extends BaseExecutorTest {
 
     private TestExecutor executor;
 
@@ -60,12 +60,12 @@ public class AbstractBeanOperationExecutorTest extends BaseExecutorTest {
     }
 
     private static void checkAssembleOperation(
-        AssembleExecution executionForId, Class<?> targetType, int targetSize, String key) {
-        Assert.assertNotNull(executionForId);
-        Assert.assertEquals(targetType, executionForId.getSource());
-        Assert.assertEquals(targetSize, executionForId.getTargets().size());
-        AssembleOperation operationForId = executionForId.getOperation();
+        AssembleExecution execution, Class<?> targetType, int targetSize, String key) {
+        Assert.assertNotNull(execution);
+        AssembleOperation operationForId = execution.getOperation();
         Assert.assertEquals(key, operationForId.getKey());
+        Assert.assertEquals(targetType, execution.getSource());
+        Assert.assertEquals(targetSize, execution.getTargets().size());
     }
 
     private List<AssembleExecution> getExecutions(BiConsumer<List<Bean>, BeanOperations> consumer) {
@@ -81,14 +81,14 @@ public class AbstractBeanOperationExecutorTest extends BaseExecutorTest {
     }
 
     @Getter
-    private static class TestExecutor extends AbstractBeanOperationExecutor {
+    private static class TestExecutor extends AbstractFlatDisassembleBeanOperationExecutor {
         private List<AssembleExecution> executions;
         public TestExecutor(ContainerManager containerManager) {
             super(containerManager);
         }
 
         @Override
-        protected void executeOperations(List<AssembleExecution> executions, Options options) {
+        protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) {
             this.executions = executions;
         }
     }
@@ -96,11 +96,11 @@ public class AbstractBeanOperationExecutorTest extends BaseExecutorTest {
     @Accessors(chain = true)
     @Data
     private static class Bean {
-        @Assemble(groups = {"op", "id"})
+        @Assemble(groups = {"op", "id"}, sort = 0)
         private Integer id;
         private String name;
 
-        @Assemble(groups = {"op", "key"})
+        @Assemble(groups = {"op", "key"}, sort = 1)
         private Integer key;
         private String value;
 

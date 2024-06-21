@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * test for {@link AbstractBeanOperationExecutor}
+ * test for {@link AbstractFlatDisassembleBeanOperationExecutor}
  *
  * @author huangchengxing
  */

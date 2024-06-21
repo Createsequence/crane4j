@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author huangchengxing
  */
-public class OrderedBeanOperationExecutor extends AbstractOperationAwareBeanOperationExecutor {
+public class OrderedBeanOperationExecutor extends AbstractFlatDisassembleBeanOperationExecutor {
 
     /**
      * comparator
@@ -54,9 +54,9 @@ public class OrderedBeanOperationExecutor extends AbstractOperationAwareBeanOper
      * </ul>
      */
     @Override
-    protected void executeOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
+    protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
         executions.stream()
             .sorted(Comparator.comparing(AssembleExecution::getOperation, comparator))
-            .forEach(e -> doExecute(e.getHandler(), e.getContainer(), Collections.singletonList(e)));
+            .forEach(e -> tryExecuteAssembleExecution(e.getHandler(), e.getContainer(), Collections.singletonList(e)));
     }
 }

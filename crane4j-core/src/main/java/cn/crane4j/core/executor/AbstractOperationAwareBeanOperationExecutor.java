@@ -15,7 +15,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * An abstract implementation of {@link AbstractBeanOperationExecutor}
+ * An abstract implementation of {@link AbstractFlatDisassembleBeanOperationExecutor}
  * that supports the operation aware.
  *
  * @author huangchengxing
@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
  * @see SmartOperationAwareBean
  * @since 2.5.0
  */
-public abstract class AbstractOperationAwareBeanOperationExecutor extends AbstractBeanOperationExecutor {
+public abstract class AbstractOperationAwareBeanOperationExecutor
+    extends AbstractBeanOperationExecutor {
 
     protected AbstractOperationAwareBeanOperationExecutor(ContainerManager containerManager) {
         super(containerManager);

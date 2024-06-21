@@ -62,7 +62,7 @@ public class AsyncBeanOperationExecutor extends DisorderedBeanOperationExecutor 
      */
     @SuppressWarnings("unchecked")
     @Override
-    protected void executeOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
+    protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
         CompletableFuture<Void>[] tasks = executions.stream()
             .map(execution -> (Runnable)() -> doExecuteOperations(execution))
             .map(task -> CompletableFuture.runAsync(task, executor))
@@ -76,7 +76,7 @@ public class AsyncBeanOperationExecutor extends DisorderedBeanOperationExecutor 
 
     private void doExecuteOperations(AssembleExecution execution) {
         Container<?> container = execution.getContainer();
-        doExecute(execution.getHandler(), container, Collections.singletonList(execution));
+        tryExecuteAssembleExecution(execution.getHandler(), container, Collections.singletonList(execution));
     }
 
     /**
