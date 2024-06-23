@@ -3,35 +3,36 @@ package cn.crane4j.core.executor;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.exception.OperationExecuteException;
-import cn.crane4j.core.parser.operation.AssembleOperation;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
- * <p>Synchronization implementation of {@link BeanOperationExecutor}.<br />
- * During execution, the execution order of {@link AssembleOperation} will be guaranteed,
- * but it cannot be guaranteed that {@link Container} will only be called at least once.
+ * <p>The asynchronous implementation of {@link AbstractBeanOperationRecursiveExecutor}.<br />
+ * It will group the operations to be executed according to the data source container,
+ * then submit them to the executor in turn, and finally complete them asynchronously.
  *
  * @author huangchengxing
+ * @since 2.9.0
  */
-public class OrderedBeanOperationExecutor extends AbstractBeanOperationFlattingExecutor {
-
+public class AsyncBeanOperationRecursiveExecutor extends AbstractBeanOperationRecursiveExecutor {
     /**
-     * comparator
+     * thread pool used to perform operations.
      */
-    private final Comparator<AssembleOperation> comparator;
+    private final Executor executor;
 
     /**
-     * Create a new {@link OrderedBeanOperationExecutor} instance.
+     * Create an instance of {@link AsyncBeanOperationExecutor}.
      *
      * @param containerManager container manager
-     * @param comparator       comparator
+     * @param executor thread pool used to perform operations
      */
-    public OrderedBeanOperationExecutor(ContainerManager containerManager, Comparator<AssembleOperation> comparator) {
+    public AsyncBeanOperationRecursiveExecutor(
+        ContainerManager containerManager, Executor executor) {
         super(containerManager);
-        this.comparator = comparator;
+        this.executor = executor;
     }
 
     /**
@@ -53,10 +54,22 @@ public class OrderedBeanOperationExecutor extends AbstractBeanOperationFlattingE
      *     </li>
      * </ul>
      */
+    @SuppressWarnings("unchecked")
     @Override
     protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
-        executions.stream()
-            .sorted(Comparator.comparing(AssembleExecution::getOperation, comparator))
-            .forEach(e -> tryExecuteAssembleExecution(e.getHandler(), e.getContainer(), Collections.singletonList(e)));
+        CompletableFuture<Void>[] tasks = executions.stream()
+            .map(execution -> (Runnable)() -> doExecuteOperations(execution))
+            .map(task -> CompletableFuture.runAsync(task, executor))
+            .toArray(CompletableFuture[]::new);
+        try {
+            CompletableFuture.allOf(tasks).join();
+        } catch (Exception e) {
+            throw new OperationExecuteException(e);
+        }
+    }
+
+    private void doExecuteOperations(AssembleExecution execution) {
+        Container<?> container = execution.getContainer();
+        tryExecuteAssembleExecution(execution.getHandler(), container, Collections.singletonList(execution));
     }
 }

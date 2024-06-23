@@ -20,9 +20,12 @@ import cn.crane4j.core.container.DefaultContainerManager;
 import cn.crane4j.core.container.lifecycle.ContainerInstanceLifecycleProcessor;
 import cn.crane4j.core.container.lifecycle.ContainerRegisterLogger;
 import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
+import cn.crane4j.core.executor.AsyncBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
+import cn.crane4j.core.executor.DisorderedBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.OrderedBeanOperationExecutor;
+import cn.crane4j.core.executor.OrderedBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
@@ -529,6 +532,12 @@ public class Crane4jAutoConfiguration {
         return new DisorderedBeanOperationExecutor(containerManager);
     }
 
+    @ConditionalOnMissingBean
+    @Bean
+    public DisorderedBeanOperationRecursiveExecutor disorderedBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        return new DisorderedBeanOperationRecursiveExecutor(containerManager);
+    }
+
     @SuppressWarnings("all")
     @ConditionalOnMissingBean
     @Bean
@@ -545,10 +554,32 @@ public class Crane4jAutoConfiguration {
         return new AsyncBeanOperationExecutor(containerManager, executor);
     }
 
+    @SuppressWarnings("all")
+    @ConditionalOnMissingBean
+    @Bean
+    public AsyncBeanOperationRecursiveExecutor asyncBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int processors = Runtime.getRuntime().availableProcessors();
+        executor.setCorePoolSize(processors);
+        executor.setMaxPoolSize(processors);
+        executor.setQueueCapacity(1);
+        executor.setThreadNamePrefix("crane4j-async-executor");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setAllowCoreThreadTimeOut(true);
+        executor.initialize();
+        return new AsyncBeanOperationRecursiveExecutor(containerManager, executor);
+    }
+
     @ConditionalOnMissingBean
     @Bean
     public OrderedBeanOperationExecutor orderedBeanOperationExecutor(ContainerManager containerManager) {
         return new OrderedBeanOperationExecutor(containerManager, Comparator.comparing(AssembleOperation::getSort));
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public OrderedBeanOperationRecursiveExecutor orderedBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        return new OrderedBeanOperationRecursiveExecutor(containerManager, Comparator.comparing(AssembleOperation::getSort));
     }
 
     @ConditionalOnMissingBean

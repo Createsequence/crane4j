@@ -19,7 +19,7 @@ import java.util.function.Predicate;
  * and then distribute them to {@link AssembleOperationHandler} for execution.
  *
  * @author huangchengxing
- * @see AbstractFlatDisassembleBeanOperationExecutor
+ * @see AbstractBeanOperationFlattingExecutor
  * @see AsyncBeanOperationExecutor
  * @see DisorderedBeanOperationExecutor
  * @see OrderedBeanOperationExecutor

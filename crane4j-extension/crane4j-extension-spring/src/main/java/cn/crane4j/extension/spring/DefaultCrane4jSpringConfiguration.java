@@ -13,9 +13,12 @@ import cn.crane4j.core.container.ContainerManager;
 import cn.crane4j.core.container.lifecycle.ContainerInstanceLifecycleProcessor;
 import cn.crane4j.core.container.lifecycle.ContainerRegisterLogger;
 import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
+import cn.crane4j.core.executor.AsyncBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.DisorderedBeanOperationExecutor;
+import cn.crane4j.core.executor.DisorderedBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.OrderedBeanOperationExecutor;
+import cn.crane4j.core.executor.OrderedBeanOperationRecursiveExecutor;
 import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToOneAssembleOperationHandler;
@@ -366,6 +369,11 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         return new DisorderedBeanOperationExecutor(containerManager);
     }
 
+    @Bean
+    public DisorderedBeanOperationRecursiveExecutor disorderedBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        return new DisorderedBeanOperationRecursiveExecutor(containerManager);
+    }
+
     @SuppressWarnings("all")
     @Bean
     public AsyncBeanOperationExecutor asyncBeanOperationExecutor(ContainerManager containerManager) {
@@ -381,9 +389,30 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         return new AsyncBeanOperationExecutor(containerManager, executor);
     }
 
+    @SuppressWarnings("all")
+    @Bean
+    public AsyncBeanOperationRecursiveExecutor asyncBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int processors = Runtime.getRuntime().availableProcessors();
+        executor.setCorePoolSize(processors);
+        executor.setMaxPoolSize(processors);
+        executor.setQueueCapacity(1);
+        executor.setThreadNamePrefix("crane4j-async-executor");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setAllowCoreThreadTimeOut(true);
+        executor.initialize();
+        return new AsyncBeanOperationRecursiveExecutor(containerManager, executor);
+    }
+
+
     @Bean
     public OrderedBeanOperationExecutor orderedBeanOperationExecutor(ContainerManager containerManager) {
         return new OrderedBeanOperationExecutor(containerManager, Comparator.comparing(AssembleOperation::getSort));
+    }
+
+    @Bean
+    public OrderedBeanOperationRecursiveExecutor orderedBeanOperationRecursiveExecutor(ContainerManager containerManager) {
+        return new OrderedBeanOperationRecursiveExecutor(containerManager, Comparator.comparing(AssembleOperation::getSort));
     }
 
     @Bean

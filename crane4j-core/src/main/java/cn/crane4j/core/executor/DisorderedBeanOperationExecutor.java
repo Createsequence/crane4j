@@ -20,7 +20,7 @@ import java.util.Map;
  * @author huangchengxing
  */
 @Slf4j
-public class DisorderedBeanOperationExecutor extends AbstractFlatDisassembleBeanOperationExecutor {
+public class DisorderedBeanOperationExecutor extends AbstractBeanOperationFlattingExecutor {
 
     /**
      * Create an instance of {@link DisorderedBeanOperationExecutor}.
@@ -51,7 +51,8 @@ public class DisorderedBeanOperationExecutor extends AbstractFlatDisassembleBean
      * </ul>
      */
     @Override
-    protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
+    protected void doExecuteAssembleOperations(
+        List<AssembleExecution> executions, Options options) throws OperationExecuteException {
         Map<Container<?>, Map<AssembleOperationHandler, List<AssembleExecution>>> operations = new LinkedHashMap<>();
         executions.forEach(e -> {
             Container<?> container = e.getContainer();

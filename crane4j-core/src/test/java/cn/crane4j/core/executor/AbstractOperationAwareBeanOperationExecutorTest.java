@@ -104,7 +104,7 @@ public class AbstractOperationAwareBeanOperationExecutorTest extends BaseExecuto
     }
 
     @Getter
-    private static class TestExecutor extends AbstractFlatDisassembleBeanOperationExecutor {
+    private static class TestExecutor extends AbstractBeanOperationFlattingExecutor {
         private List<AssembleExecution> executions;
         public TestExecutor(ContainerManager containerManager) {
             super(containerManager);

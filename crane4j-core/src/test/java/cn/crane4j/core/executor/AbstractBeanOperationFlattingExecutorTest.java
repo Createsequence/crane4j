@@ -21,11 +21,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
- * test for {@link AbstractFlatDisassembleBeanOperationExecutor}
+ * test for {@link AbstractBeanOperationFlattingExecutor}
  *
  * @author huangchengxing
  */
-public class AbstractAbstractFlatDisassembleBeanOperationExecutorTest extends BaseExecutorTest {
+public class AbstractBeanOperationFlattingExecutorTest extends BaseExecutorTest {
 
     private TestExecutor executor;
 
@@ -81,7 +81,7 @@ public class AbstractAbstractFlatDisassembleBeanOperationExecutorTest extends Ba
     }
 
     @Getter
-    private static class TestExecutor extends AbstractFlatDisassembleBeanOperationExecutor {
+    private static class TestExecutor extends AbstractBeanOperationFlattingExecutor {
         private List<AssembleExecution> executions;
         public TestExecutor(ContainerManager containerManager) {
             super(containerManager);

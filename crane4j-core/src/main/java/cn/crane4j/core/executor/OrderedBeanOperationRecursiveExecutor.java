@@ -10,13 +10,14 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * <p>Synchronization implementation of {@link BeanOperationExecutor}.<br />
+ * <p>Synchronization implementation of {@link AbstractBeanOperationRecursiveExecutor}.<br />
  * During execution, the execution order of {@link AssembleOperation} will be guaranteed,
  * but it cannot be guaranteed that {@link Container} will only be called at least once.
  *
  * @author huangchengxing
+ * @since 2.9.0
  */
-public class OrderedBeanOperationExecutor extends AbstractBeanOperationFlattingExecutor {
+public class OrderedBeanOperationRecursiveExecutor extends AbstractBeanOperationRecursiveExecutor {
 
     /**
      * comparator
@@ -24,12 +25,12 @@ public class OrderedBeanOperationExecutor extends AbstractBeanOperationFlattingE
     private final Comparator<AssembleOperation> comparator;
 
     /**
-     * Create a new {@link OrderedBeanOperationExecutor} instance.
+     * Create a new {@link OrderedBeanOperationRecursiveExecutor} instance.
      *
      * @param containerManager container manager
      * @param comparator       comparator
      */
-    public OrderedBeanOperationExecutor(ContainerManager containerManager, Comparator<AssembleOperation> comparator) {
+    public OrderedBeanOperationRecursiveExecutor(ContainerManager containerManager, Comparator<AssembleOperation> comparator) {
         super(containerManager);
         this.comparator = comparator;
     }
@@ -42,19 +43,19 @@ public class OrderedBeanOperationExecutor extends AbstractBeanOperationFlattingE
      * the corresponding {@link AssembleExecution} is obtained.
      *
      * @param executions assembly operations to be completed
-     * @param options options for execution
+     * @param options    options for execution
      * @throws OperationExecuteException thrown when operation execution exception
-     * @implNote
-     * <ul>
-     *     <li>If necessary, you need to ensure the execution order of {@link AssembleExecution};</li>
-     *     <li>
-     *         If the network request and other time-consuming operations are required to obtain the data source,
-     *         the number of requests for the data source should be reduced as much as possible;
-     *     </li>
+     * @implNote <ul>
+     * <li>If necessary, you need to ensure the execution order of {@link AssembleExecution};</li>
+     * <li>
+     * If the network request and other time-consuming operations are required to obtain the data source,
+     * the number of requests for the data source should be reduced as much as possible;
+     * </li>
      * </ul>
      */
     @Override
-    protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options) throws OperationExecuteException {
+    protected void doExecuteAssembleOperations(List<AssembleExecution> executions, Options options)
+        throws OperationExecuteException {
         executions.stream()
             .sorted(Comparator.comparing(AssembleExecution::getOperation, comparator))
             .forEach(e -> tryExecuteAssembleExecution(e.getHandler(), e.getContainer(), Collections.singletonList(e)));

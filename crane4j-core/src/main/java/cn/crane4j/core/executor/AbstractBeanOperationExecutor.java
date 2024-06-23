@@ -193,7 +193,8 @@ public abstract class AbstractBeanOperationExecutor implements BeanOperationExec
      *     </li>
      * </ul>
      */
-    protected abstract void doExecuteAssembleOperations(List<AssembleExecution> executions, BeanOperationExecutor.Options options) throws OperationExecuteException;
+    protected abstract void doExecuteAssembleOperations(
+        List<AssembleExecution> executions, BeanOperationExecutor.Options options) throws OperationExecuteException;
 
     @NonNull
     private List<AssembleExecution> combineExecutions(

@@ -48,17 +48,16 @@ import java.util.function.Predicate;
  * it is recommended to minimize the number of accesses to the {@link Container}.
  *
  * @author huangchengxing
- * @see AbstractOperationAwareBeanOperationExecutor
- * @see AsyncBeanOperationExecutor
- * @see DisorderedBeanOperationExecutor
- * @see OrderedBeanOperationExecutor
+ * @see AsyncBeanOperationRecursiveExecutor
+ * @see DisorderedBeanOperationRecursiveExecutor
+ * @see OrderedBeanOperationRecursiveExecutor
  * @since 2.9.0
  */
 @Slf4j
-public abstract class AbstractFlatDisassembleBeanOperationExecutor
-    extends AbstractOperationAwareBeanOperationExecutor implements BeanOperationExecutor {
+public abstract class AbstractBeanOperationRecursiveExecutor
+    extends AbstractOperationAwareBeanOperationExecutor {
 
-    protected AbstractFlatDisassembleBeanOperationExecutor(ContainerManager containerManager) {
+    protected AbstractBeanOperationRecursiveExecutor(ContainerManager containerManager) {
         super(containerManager);
     }
 
@@ -75,58 +74,41 @@ public abstract class AbstractFlatDisassembleBeanOperationExecutor
     @Override
     public void doExecute(
         @NonNull Collection<?> targets, @NonNull BeanOperations operations, Options options) {
-        MultiMap<BeanOperations, Object> targetWithOperations = MultiMap.linkedListMultimap();
-        targetWithOperations.putAll(operations, targets);
-        // disassembly
-        targetWithOperations = executeDisassembleOperations(
-            operations, options, targetWithOperations);
-        // assembly
-        executeAssembleOperations(options, targetWithOperations);
-        // complete assembly operation
-        afterOperationsCompletion(targetWithOperations);
+        MultiMap<BeanOperations, Object> currentTargets = MultiMap.linkedListMultimap();
+        currentTargets.putAll(operations, targets);
+        while (!currentTargets.isEmpty()) {
+            executeAssembleOperations(options, currentTargets);
+            MultiMap<BeanOperations, Object> nextTargets = executeDisassembleOperations(
+                operations, options, currentTargets
+            );
+            afterOperationsCompletion(currentTargets);
+            currentTargets = nextTargets;
+        }
     }
 
-    /**
-     * Complete disassemble for {@code targetWithOps}
-     *
-     * @param filter        filter
-     * @param targetWithOps targetWithOps
-     * @return processed targets
-     */
     @Override
     protected MultiMap<BeanOperations, Object> doExecuteDisassembleOperations(
-        Predicate<? super KeyTriggerOperation> filter,
-        MultiMap<BeanOperations, Object> targetWithOps) {
-        MultiMap<BeanOperations, Object> results = MultiMap.linkedListMultimap();
-        results.putAll(targetWithOps);
+        Predicate<? super KeyTriggerOperation> filter, MultiMap<BeanOperations, Object> targetWithOps) {
+        MultiMap<BeanOperations, Object> results = MultiMap.arrayListMultimap();
         targetWithOps.asMap().forEach((ops, targets) ->
-            disassembleIfNecessary(targets, ops, filter, results));
+            ops.getDisassembleOperations().stream()
+                .filter(filter)
+                .forEach(op -> disassembleAndCollect(targets, op, results))
+        );
         return results;
     }
 
-    private <T> void disassembleIfNecessary(
-        Collection<T> targets, BeanOperations operations,
-        Predicate<? super KeyTriggerOperation> filter, MultiMap<BeanOperations, Object> collectedTargets) {
-        Collection<DisassembleOperation> internalOperations = operations.getDisassembleOperations();
-        if (CollectionUtils.isEmpty(internalOperations)) {
+    private void disassembleAndCollect(
+        Collection<Object> targets, DisassembleOperation op, MultiMap<BeanOperations, Object> collectedBeans) {
+        Collection<Object> actualTarget = filterTargetsForSupportedOperation(targets, op);
+        if (actualTarget.isEmpty()) {
             return;
         }
-        internalOperations.stream()
-            .filter(filter)
-            .forEach(internal -> doDisassembleAndCollect(targets, internal, filter, collectedTargets));
-    }
-
-    private <T> void doDisassembleAndCollect(
-        Collection<T> targets, DisassembleOperation disassembleOperation, Predicate<? super KeyTriggerOperation> filter, MultiMap<BeanOperations, Object> collector) {
-        DisassembleOperationHandler handler = disassembleOperation.getDisassembleOperationHandler();
-        targets = filterTargetsForSupportedOperation(targets, disassembleOperation);
-        Collection<?> internalTargets = handler.process(disassembleOperation, targets);
-        if (CollectionUtils.isEmpty(internalTargets)) {
-            return;
+        DisassembleOperationHandler handler = op.getDisassembleOperationHandler();
+        Collection<?> nestedBeans = handler.process(op, targets);
+        if (CollectionUtils.isNotEmpty(nestedBeans)) {
+            BeanOperations beanOperations = op.getInternalBeanOperations(actualTarget);
+            collectedBeans.putAll(beanOperations, nestedBeans);
         }
-        BeanOperations internalOperations = disassembleOperation.getInternalBeanOperations(internalTargets);
-        collector.putAll(internalOperations, internalTargets);
-        // recurse process if still have nested objects
-        disassembleIfNecessary(internalTargets, internalOperations, filter, collector);
     }
 }
