@@ -9,7 +9,9 @@ import cn.crane4j.core.condition.ConditionParser;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.ContainerProvider;
 import cn.crane4j.core.container.Containers;
+import cn.crane4j.core.container.LimitedContainer;
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
+import cn.crane4j.core.exception.Crane4jException;
 import cn.crane4j.core.executor.AsyncBeanOperationExecutor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
 import cn.crane4j.core.executor.OrderedBeanOperationExecutor;
@@ -27,6 +29,7 @@ import cn.crane4j.core.support.container.MethodContainerFactory;
 import cn.crane4j.core.support.operator.OperatorProxyFactory;
 import cn.crane4j.core.support.operator.OperatorProxyMethodFactory;
 import cn.crane4j.core.support.reflect.PropertyOperator;
+import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.ConfigurationUtil;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,6 +40,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -490,6 +494,38 @@ public class Crane4jTemplate {
         @Nullable
         public ContainerProvider getContainerProvider(String providerName) {
             return configuration.getContainerProvider(providerName);
+        }
+
+        /**
+         * Refresh data cache for specified namespace if possible.
+         * <ul>
+         *     <li>if container not exists, register a new container with the given data;</li>
+         *     <li>if container exists, refresh the data cache if possible;</li>
+         * </ul>
+         *
+         * @param namespace namespace
+         * @param data date
+         * @param <K> key type
+         * @return this
+         * @throws Crane4jException if container already exists and it is not a {@link LimitedContainer}.
+         * @see LimitedContainer#refresh
+         * @since 2.9.0
+         */
+        @SuppressWarnings("unchecked")
+        public <K> Crane4jTemplate.OpsForContainer refreshContainerData(
+            String namespace, @NonNull Map<K, ?> data) {
+            Container<?> container = configuration.getContainer(namespace);
+            if (Objects.isNull(container)) {
+                registerMapContainer(namespace, data);
+                return this;
+            }
+            Asserts.isTrue(
+                container instanceof LimitedContainer,
+                "Container [{}] does not support refreshing data, is it a [{}]?",
+                namespace, LimitedContainer.class
+            );
+            ((LimitedContainer<K>) container).refresh(data);
+            return this;
         }
     }
 

@@ -27,6 +27,10 @@ public class ImmutableMapContainerTest {
         assertEquals(map, container.getAll());
         //always return all data
         assertEquals(map, container.get(Collections.singletonList("1")));
+
+        container.refresh(Collections.emptyMap());
+        Assert.assertNotSame(map, container.getAll());
+        Assert.assertTrue(container.getAll().isEmpty());
     }
 
     @Test

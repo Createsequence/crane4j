@@ -14,6 +14,7 @@ import cn.crane4j.core.condition.ConditionParser;
 import cn.crane4j.core.container.Container;
 import cn.crane4j.core.container.ContainerProvider;
 import cn.crane4j.core.container.Containers;
+import cn.crane4j.core.container.LimitedContainer;
 import cn.crane4j.core.container.PartitionContainerProvider;
 import cn.crane4j.core.container.lifecycle.ContainerLifecycleProcessor;
 import cn.crane4j.core.executor.BeanOperationExecutor;
@@ -174,6 +175,26 @@ public abstract class Crane4jTemplateTest {
             Assert.assertSame(ops.opsForComponent(), crane4jTemplate.opsForComponent());
             Assert.assertSame(ops.opsForExecute(), crane4jTemplate);
             Assert.assertSame(ops.opsForProxy(), crane4jTemplate.opsForProxy());
+        }
+
+        @Test
+        public void testRefreshCaches() {
+            String containerNamespace = "testRefreshCaches";
+            Assert.assertFalse(configuration.containsContainer(containerNamespace));
+
+            Crane4jTemplate.OpsForContainer ops = crane4jTemplate.opsForContainer();
+            Map<String, String> data = Collections.singletonMap("1", "1");
+            ops.refreshContainerData(containerNamespace, data);
+
+            Assert.assertTrue(configuration.containsContainer(containerNamespace));
+            Container<String> container = configuration.getContainer(containerNamespace);
+            Assert.assertTrue(container instanceof LimitedContainer);
+            LimitedContainer<String> limitedContainer = (LimitedContainer<String>) container;
+            Assert.assertEquals(data, limitedContainer.getAll());
+
+            ops.refreshContainerData(containerNamespace, Collections.emptyMap());
+            Assert.assertNotEquals(data, limitedContainer.getAll());
+            Assert.assertEquals(Collections.emptyMap(), limitedContainer.getAll());
         }
 
         public static class TestMethodContainers {

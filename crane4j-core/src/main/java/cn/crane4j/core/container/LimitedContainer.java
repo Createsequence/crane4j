@@ -1,5 +1,7 @@
 package cn.crane4j.core.container;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Map;
 
 /**
@@ -17,4 +19,14 @@ public interface LimitedContainer<K> extends Container<K> {
      * @return all elements
      */
     Map<K, ?> getAll();
+
+    /**
+     * Refresh the container with new data.
+     *
+     * @param data data
+     * @since 2.9.0
+     */
+    default void refresh(@NonNull Map<K, ?> data) {
+        // do nothing
+    }
 }

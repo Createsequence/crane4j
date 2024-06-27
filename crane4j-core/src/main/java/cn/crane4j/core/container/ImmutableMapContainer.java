@@ -1,9 +1,9 @@
 package cn.crane4j.core.container;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.Objects;
  * @since 2.0.0
  */
 @EqualsAndHashCode
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImmutableMapContainer<K> implements LimitedContainer<K>, Container.Lifecycle {
 
     /**
@@ -42,7 +42,7 @@ public class ImmutableMapContainer<K> implements LimitedContainer<K>, Container.
     /**
      * data source objects grouped by key value
      */
-    private final Map<K, ?> data;
+    private volatile Map<K, ?> data;
 
     /**
      * <p>Create a key-value pair container based on the specified {@link Map} instance.
@@ -77,6 +77,17 @@ public class ImmutableMapContainer<K> implements LimitedContainer<K>, Container.
     @Override
     public Map<K, ?> getAll() {
         return data;
+    }
+
+    /**
+     * Refresh the container with new data.
+     *
+     * @param data data
+     * @since 2.9.0
+     */
+    @Override
+    public void refresh(@NonNull Map<K, ?> data) {
+        this.data = data;
     }
 
     /**
