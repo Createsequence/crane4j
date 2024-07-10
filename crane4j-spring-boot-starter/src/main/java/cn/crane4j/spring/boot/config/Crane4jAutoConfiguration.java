@@ -196,6 +196,7 @@ public class Crane4jAutoConfiguration {
         return new SpringConverterManager(DefaultConversionService.getSharedInstance());
     }
 
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Primary
     @ConditionalOnMissingBean
     @Bean

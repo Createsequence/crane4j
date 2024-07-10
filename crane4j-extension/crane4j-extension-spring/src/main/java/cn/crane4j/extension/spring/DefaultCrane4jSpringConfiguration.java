@@ -140,6 +140,7 @@ public class DefaultCrane4jSpringConfiguration implements SmartInitializingSingl
         return new SpringConverterManager(DefaultConversionService.getSharedInstance());
     }
 
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Primary
     @Bean
     public Crane4jApplicationContext crane4jApplicationContext(ApplicationContext applicationContext) {
