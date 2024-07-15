@@ -4,8 +4,9 @@ import cn.crane4j.core.container.MethodInvokerContainer;
 import cn.crane4j.core.support.AnnotationFinder;
 import cn.crane4j.core.support.Crane4jGlobalConfiguration;
 import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
-import cn.crane4j.core.support.query.AbstractQueryAssembleAnnotationHandler;
 import cn.crane4j.core.support.query.QueryDefinition;
+import cn.crane4j.core.support.query.RepositoryTargetProvider;
+import cn.crane4j.core.util.Try;
 import cn.crane4j.extension.mybatis.plus.AssembleMpAnnotationHandler;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -104,7 +105,7 @@ public class Crane4jMybatisPlusAutoConfiguration {
      * @since 2.9.0
      */
     @RequiredArgsConstructor
-    public static class MapperLazyLoader implements AbstractQueryAssembleAnnotationHandler.RepositoryTargetProvider<BaseMapper<?>> {
+    public static class MapperLazyLoader implements RepositoryTargetProvider<BaseMapper<?>> {
 
         private final BeanFactory beanFactory;
 
@@ -155,7 +156,10 @@ public class Crane4jMybatisPlusAutoConfiguration {
             AssembleMpAnnotationHandler handler = applicationContext.getBean(AssembleMpAnnotationHandler.class);
             mappers.entrySet().stream()
                 .filter(e -> mapperFilter.test(e.getKey(), e.getValue()))
-                .forEach(e -> handler.registerRepository(e.getKey(), e.getValue()));
+                .forEach(e -> Try.of(() -> handler.registerRepository(e.getKey(), e.getValue()))
+                    .subscribeFailure(ex -> log.error("Failed to register mapper: {}", e.getKey(), ex))
+                    .perform()
+                );
             log.info("crane4j mybatis-plus extension component initialization completed.");
         }
     }

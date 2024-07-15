@@ -10,6 +10,7 @@ import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
 import cn.crane4j.core.support.query.AbstractQueryAssembleAnnotationHandler;
 import cn.crane4j.core.support.query.QueryDefinition;
 import cn.crane4j.core.support.query.QueryRepository;
+import cn.crane4j.core.support.query.RepositoryTargetProvider;
 import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.hutool.core.text.CharSequenceUtil;
@@ -33,7 +34,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -181,18 +181,24 @@ public class AssembleDbAnnotationHandler
         throw new UnsupportedOperationException("RepositoryTargetProvider is not supported to set!");
     }
 
+    /**
+     * Create repository.
+     *
+     * @param id id
+     * @param queryDefinition repository
+     * @return repo
+     */
+    @NonNull
     @Override
-    public QueryDefinition registerRepository(String id, @NonNull QueryDefinition queryDefinition) {
+    protected DataSourceRepository createRepository(String id, @NonNull QueryDefinition queryDefinition) {
         Asserts.isNotEmpty(queryDefinition.getConditionColumn(), "condition column cannot be empty!");
-        return Optional.ofNullable(ormRepositoryMap.put(id, new DataSourceRepository(queryDefinition)))
-            .map(QueryRepository::getTarget)
-            .orElse(null);
+        return new DataSourceRepository(queryDefinition);
     }
 
     @SuppressWarnings("java:S6548")
     @Getter
     @RequiredArgsConstructor
-    private static class DataSourceRepository implements QueryRepository<QueryDefinition> {
+    protected static class DataSourceRepository implements QueryRepository<QueryDefinition> {
         private final QueryDefinition target;
         @Override
         public String getPrimaryKeyProperty() {

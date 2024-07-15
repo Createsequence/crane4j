@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -136,15 +137,32 @@ public abstract class AbstractQueryAssembleAnnotationHandler<A extends Annotatio
      * @param id id
      * @param repository repository
      * @return old repository target
-     * @see #ormRepositoryMap
+     * @see #getRepository
      */
-    public abstract R registerRepository(String id, @NonNull R repository);
+    public synchronized R registerRepository(String id, @NonNull R repository)  {
+        Asserts.isNotNull(repository, "repository cannot be null");
+        QueryRepository<R> repo = createRepository(id, repository);
+        return Optional.ofNullable(ormRepositoryMap.put(id, repo))
+            .map(QueryRepository::getTarget)
+            .orElse(null);
+    }
+
+    /**
+     * Create repository.
+     *
+     * @param id id
+     * @param repository repository
+     * @return repo
+     */
+    @NonNull
+    protected abstract QueryRepository<R> createRepository(String id, @NonNull R repository);
 
     /**
      * Get repository by given annotation.
      *
      * @param standardAnnotation standard annotation
      * @return repository
+     * @see #registerRepository
      */
     protected synchronized QueryRepository<R> getRepository(OrmAssembleAnnotation<A> standardAnnotation) {
         QueryDefinition queryDefinition = standardAnnotation.getQueryDefinition();
@@ -203,23 +221,5 @@ public abstract class AbstractQueryAssembleAnnotationHandler<A extends Annotatio
     protected static class OrmAssembleAnnotation<A extends Annotation>
         extends StandardAssembleAnnotationAdapter<A> implements StandardAssembleAnnotation<A> {
         private final QueryDefinition queryDefinition;
-    }
-
-    /**
-     * Repository provider.
-     *
-     * @param <R> repository type
-     * @author huangchengxing
-     */
-    @FunctionalInterface
-    public interface RepositoryTargetProvider<R> {
-
-        /**
-         * Get repository by given id.
-         *
-         * @param queryDefinition query definition
-         * @return repository
-         */
-        R get(QueryDefinition queryDefinition);
     }
 }

@@ -11,7 +11,6 @@ import cn.crane4j.core.support.container.MethodInvokerContainerCreator;
 import cn.crane4j.core.support.query.AbstractQueryAssembleAnnotationHandler;
 import cn.crane4j.core.support.query.QueryDefinition;
 import cn.crane4j.core.support.query.QueryRepository;
-import cn.crane4j.core.util.Asserts;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -28,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -99,19 +97,16 @@ public class AssembleMpAnnotationHandler
     }
 
     /**
-     * Register repository.
+     * Create repository.
      *
      * @param id id
      * @param repository repository
-     * @return old repository target
+     * @return repo
      */
+    @NonNull
     @Override
-    public BaseMapper<?> registerRepository(String id, @NonNull BaseMapper<?> repository)  {
-        Asserts.isNotNull(repository, "repository cannot be null");
-        BaseMapperQueryRepository ormRepository = new BaseMapperQueryRepository(id, repository);
-        return Optional.ofNullable(ormRepositoryMap.put(id, ormRepository))
-            .map(QueryRepository::getTarget)
-            .orElse(null);
+    protected BaseMapperQueryRepository createRepository(String id, @NonNull BaseMapper<?> repository)  {
+        return new BaseMapperQueryRepository(id, repository);
     }
 
     /**
