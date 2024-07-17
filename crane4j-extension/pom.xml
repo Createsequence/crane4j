@@ -19,6 +19,7 @@
         <module>crane4j-extension-jackson</module>
         <module>crane4j-extension-redis</module>
         <module>crane4j-extension-datasource</module>
+        <module>crane4j-extension-jpa</module>
     </modules>
 
     <dependencies>
