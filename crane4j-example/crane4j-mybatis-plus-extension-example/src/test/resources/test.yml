@@ -1,9 +1,5 @@
 spring:
   datasource:
-#    url: jdbc:mysql://gz-cynosdbmysql-grp-nl9mays3.sql.tencentcdb.com:22327/crane4j-example?characterEncoding=utf8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&&allowMultiQueries=true
-#    username: crane4j
-#    password: crane4j-test
-#    driver-class-name: com.mysql.cj.jdbc.Driver
   platform: h2
   url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL;INIT=SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
   driverClassName: org.h2.Driver

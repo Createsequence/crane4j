@@ -13,12 +13,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>cn.crane4j</groupId>
-            <artifactId>crane4j-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!--provider-->
         <dependency>
             <groupId>com.baomidou</groupId>

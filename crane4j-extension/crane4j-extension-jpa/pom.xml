@@ -9,17 +9,10 @@
     </parent>
 
     <artifactId>crane4j-extension-jpa</artifactId>
-    <name>crane4j-extension-jpa</name>
     <version>${project.parent.version}</version>
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>cn.crane4j</groupId>
-            <artifactId>crane4j-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!--provider-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -31,18 +24,21 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.1.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

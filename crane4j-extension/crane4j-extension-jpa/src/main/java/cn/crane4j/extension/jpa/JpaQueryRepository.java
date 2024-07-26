@@ -14,10 +14,10 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -38,10 +38,7 @@ public class JpaQueryRepository implements QueryRepository<Repository<?, ?>> {
     public JpaQueryRepository(
         @NonNull Repository<?, ?> target, @NonNull AnnotationFinder annotationFinder) {
         this.target = target;
-        this.entityType = Optional.of(target.getClass())
-            .map(t -> ResolvableType.forClass(Repository.class, t)
-                .getGeneric(0).getRawClass())
-            .orElseThrow(() -> new Crane4jException("cannot determine entity type from repository: {}", target.getClass()));
+        this.entityType = resolveEntityTypeFromRepository(target);
 
         // table
         Table table = annotationFinder.findAnnotation(entityType, Table.class);
@@ -64,6 +61,16 @@ public class JpaQueryRepository implements QueryRepository<Repository<?, ?>> {
             .findFirst()
             .map(Field::getName)
             .orElseThrow(() -> new Crane4jException("No primary key found in entity type: {}", target));
+    }
+
+    protected Class<?> resolveEntityTypeFromRepository(@NonNull Repository<?, ?> target) {
+        return Arrays.stream(target.getClass().getInterfaces())
+            .filter(Repository.class::isAssignableFrom)
+            .filter(itf -> !itf.getName().startsWith("org.springframework.data.repository.Repository."))
+            .map(itf -> ResolvableType.forClass(Repository.class, itf).getGeneric(0).resolve())
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(() -> new Crane4jException("cannot determine entity type from repository: {}", target.getClass()));
     }
 
     /**

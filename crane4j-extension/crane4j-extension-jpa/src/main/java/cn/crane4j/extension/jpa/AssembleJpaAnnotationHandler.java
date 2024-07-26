@@ -12,7 +12,6 @@ import cn.crane4j.core.support.query.QueryDefinition;
 import cn.crane4j.core.support.query.QueryRepository;
 import cn.crane4j.core.util.CollectionUtils;
 import cn.crane4j.core.util.StringUtils;
-import cn.hutool.core.text.CharSequenceUtil;
 import lombok.ToString;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -24,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Annotation handler for {@link AssembleJpa}.
@@ -133,7 +131,7 @@ public class AssembleJpaAnnotationHandler extends AbstractQueryAssembleAnnotatio
             this.entityType = entityType;
             this.sqlTemplate = StringUtils.format(
                 SQL, selectColumns, table, conditionColumn
-            ) + " in ({})";
+            ) + " in (?0)";
         }
 
         @Override
@@ -143,11 +141,9 @@ public class AssembleJpaAnnotationHandler extends AbstractQueryAssembleAnnotatio
         }
 
         private Object doQuery(Collection<?> keys) {
-            String keyStr = keys.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(", "));
-            String sql = CharSequenceUtil.format(sqlTemplate, keyStr);
-            return entityManager.createNativeQuery(sql, entityType).getResultList();
+            return entityManager.createNativeQuery(sqlTemplate, entityType)
+                .setParameter(0, keys)
+                .getResultList();
         }
     }
 }
