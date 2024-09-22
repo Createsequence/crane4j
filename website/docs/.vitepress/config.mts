@@ -8,9 +8,14 @@ export default defineConfig({
     base: basePath,
     head: [['link', { rel: 'icon', href: basePath + 'CRANE4J_ICON.png' }]],
     outDir: "./../../docs/",
-    title: "Crane4j",
+    title: "Crane4j - JAVA技术文章",
     description: "Crane4j, 基于注解的关联字段填充框架",
     themeConfig: {
+        // 页脚备案号
+        footer: {
+            message: '<a href="https://beian.miit.gov.cn/">粤ICP备2023016917号-1</a>',
+            copyright: 'Copyright © 2022-present <a href="https://github.com/Createsequence/">Createsequence</a>'
+        },
         // 文章展示多级目录
         outline: 'deep',
         // 站点logo
