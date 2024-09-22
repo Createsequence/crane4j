@@ -36,7 +36,7 @@ public class Student {
 
 ## 2.使用
 
-首先，你需要在 `genderCode` 字段上通过 `@AssembleEnum` 注解声明一个装配操作：
+你需要在目标类的 `genderCode` 字段上通过 `@AssembleEnum` 注解声明一个装配操作，并在里面指定将哪个枚举类作为数据源，并且指定在填充时字段需要以什么样的方式进行映射：
 
 ~~~java
 @Acccessor(chain = true)
@@ -44,11 +44,12 @@ public class Student {
 public class Student {
   	@AssembleEnum(
         type = Gender.class, // 指定数据源为 Gender 枚举类
+        props = @Mapping(ref = "genderName"), // 将 value 映射到 genderName 字段上
+        followTypeConfig = false, 
         enums = @ContainerEnum(
             key = "code", // key 为 Gender.code 字段值
             value = "value" // value 为 Gender.value 字段值
-        ),
-      	props = @Mapping(ref = "genderName") // 将 value 映射到 genderName 字段上
+        )
     )
   	private Integer genderCode;
   	private String genderName;
@@ -94,6 +95,7 @@ service.getStudents(Arrays.asList(1, 2));
 
 ~~~java
 @ContainerEnum(
+    namespace = "gender" // 指定枚举容器的 namespace
     key = "code", // key 为 Gender.code 字段值
     value = "value" // value 为 Gender.value 字段值
 )
@@ -116,7 +118,7 @@ private enum Gender {
 public class Student {
   	@AssembleEnum(
         type = Gender.class, // 指定数据源为 Gender 枚举类
-      	props = @Mapping(ref = "genderName") // 将 value 映射到 genderName 字段上
+        props = @Mapping(ref = "genderName") // 将 value 映射到 genderName 字段上
     )
   	private Integer genderCode;
   	private String genderName;
@@ -124,3 +126,9 @@ public class Student {
 ~~~
 
 其他部分与之前完全一样。
+
+:::tip
+
+更多内容请参见 [枚举数据源容器](./../basic/container/enum_container) 一节。
+
+:::
