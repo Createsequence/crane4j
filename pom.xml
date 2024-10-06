@@ -17,6 +17,7 @@
         <module>crane4j-annotation</module>
         <module>crane4j-example</module>
         <module>crane4j-extension</module>
+        <module>crane4j-extension/crane4j-extension-redisson</module>
     </modules>
 
     <licenses>
